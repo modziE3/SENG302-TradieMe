@@ -6,9 +6,6 @@ Records can be made that contain all details about their ongoing renovations, in
 These records can be shared so renovators can share their progress on their renovations.
 Renovators can also post renovation jobs they are wanting help with, allowing tradies to find work.
 
-## Using the application
-The deployed website can be found [here](https://csse-seng302-team1000.canterbury.ac.nz/prod/)
-
 ## How to run locally
 ### 1 - Running the project
 From the root directory ...
