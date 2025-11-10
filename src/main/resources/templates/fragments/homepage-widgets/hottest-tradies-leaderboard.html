@@ -1,0 +1,48 @@
+<div th:fragment="hottestTradies">
+  <style>
+    .hot-tradie-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      padding: 0 40px;
+    }
+    .star-rating label {
+      color: #ddd;
+      font-size: 24px;
+      padding: 0 2px;
+      transition: all 0.2s ease;
+    }
+  </style>
+
+  <div class="rounded" style="overflow: hidden; padding-bottom: 5px">
+    <h2 th:text="${hottestTradies.size()} != 0 ? 'Hottest Tradies' : 'No Hot Tradies'" class="mb-2"></h2>
+    <div class="hot-tradie-wrapper" style="padding: 15px; translate: 0 -10px">
+      <ul th:if="${hottestTradies.size() != 0}" style="list-style: none; width:100%">
+        <li th:each="tradie : ${hottestTradies}" class="hot-tradie-card">
+          <a th:href="@{/profile(userId=${tradie.getId()})}" style="text-decoration: none; color: black">
+            <div class="d-flex justify-content-between align-items-center flex-column flex-md-row" style="gap: 1rem;">
+              <img class="border border-2 avatar-large"
+                   th:src="@{${tradie.getProfilePicture() != null ? '/profileImages/' + tradie.getProfilePicture() : '/images/DefaultProfileImage.png'}}"
+                   alt="Profile Image">
+              <div class="text-break fw-bold fs-4" th:text="${tradie.getFirstName()} + ' ' + ${tradie.getLastName()}"></div>
+              <div th:if="${tradie.getReceivedRatings().size() > 0}" class="star-rating d-flex align-items-center">
+                <label class="fs-3" th:style="${tradie.getAverageRating() >= 1} ? 'color: #ffc107;'">★</label>
+                <label class="fs-3" th:style="${tradie.getAverageRating() >= 2} ? 'color: #ffc107;'">★</label>
+                <label class="fs-3" th:style="${tradie.getAverageRating() >= 3} ? 'color: #ffc107;'">★</label>
+                <label class="fs-3" th:style="${tradie.getAverageRating() >= 4} ? 'color: #ffc107;'">★</label>
+                <label class="fs-3" th:style="${tradie.getAverageRating() >= 5} ? 'color: #ffc107;'">★</label>
+                <span class="fs-5 ms-1" th:text="'(' + ${#numbers.formatDecimal(tradie.getAverageRating(), 1, 1)} + ')'"></span>
+              </div>
+              <div th:if="${tradie.getReceivedRatings().size() == 0}" class="star-rating d-flex align-items-center">
+                <span class="fs-5 ms-1"
+                      th:text="'No Ratings'"></span>
+              </div>
+              <div th:text="'Number of Accepted Quotes: ' + ${tradie.getNumberOfAcceptedQuotes()}"></div>
+            </div>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+</div>

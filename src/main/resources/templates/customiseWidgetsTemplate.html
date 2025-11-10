@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Customise Widgets</title>
+    <link th:href="@{/webjars/bootstrap/css/bootstrap.min.css}" rel="stylesheet"/>
+    <link th:href="@{/css/styles.css}" rel="stylesheet">
+    <link th:href="@{/css/body.css}" rel="stylesheet">
+    <link th:href="@{/css/button.css}" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" th:href="@{./favicon.ico}">
+    <style>
+        .sortable-list {
+            list-style: none;
+            max-width: 480px;
+        }
+        .sortable-item {
+            padding: 15px 20px;
+            margin: 8px 0;
+            background: rgba(255, 255, 255, 0.8);
+            font-size: 1.1em;
+            color: #333;
+            font-weight: bold;
+            cursor: grab;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="d-flex justify-content-center align-items-center">
+    <div class="container py-4">
+        <div class="rounded card p-4 shadow-sm mx-auto" style="max-width: 500px;">
+            <div class="jumbotron text-center">
+                <h4 class="display-4">Customise Widgets</h4>
+            </div>
+            <form th:action="@{/customise-widgets}" method="post">
+                <div class="sortable-list">
+                    <div th:each="widget : ${user.getHomePageWidgetOrder()}" class="sortable-item d-flex justify-content-between"
+                         draggable="true">
+                        <div class="form-check form-switch" draggable="false">
+                            <input class="form-check-input" type="checkbox" role="switch" checked onchange="setWidgetOrder()">
+                        </div>
+                        <div class="widgetName" draggable="false" th:text="${widget}"></div>
+                        <img th:src="@{'/icons/list.svg'}" alt="Drag and drop icon" draggable="false"
+                             style="width:40px; height:40px; border:none">
+                    </div>
+                    <div th:each="widget : ${allWidgets}" th:if="${!user.getHomePageWidgetOrder().contains(widget)}"
+                         class="sortable-item d-flex justify-content-between" draggable="true">
+                        <div class="form-check form-switch" draggable="false">
+                            <input class="form-check-input" type="checkbox" role="switch" onchange="setWidgetOrder()">
+                        </div>
+                        <div class="widgetName" draggable="false" th:text="${widget}"></div>
+                        <img th:src="@{'/icons/list.svg'}" alt="Drag and drop icon" draggable="false"
+                             style="width:40px; height:40px; border:none">
+                    </div>
+                </div>
+                <input type="hidden" id="widgetOrder" th:name="widgetOrder">
+                <div class="mt-3 d-block">
+                    <button id="createRecordBtn" type="submit" class="btn btn-primary w-100 mt-3">Save</button>
+                    <a th:href="@{/home}" class="btn btn-secondary w-100 mt-1">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script>
+        // JavaScript code for the drag and drop list was provided by GeeksForGeeks
+        // https://www.geeksforgeeks.org/html/create-a-drag-and-drop-sortable-list-using-html-css-javascript/
+        const list = document.querySelector('.sortable-list');
+        const orderInput = document.getElementById("widgetOrder");
+        function setWidgetOrder() {
+            let widgetNames = [];
+            document.querySelectorAll('.sortable-item')
+                .forEach(item => {
+                    if (item.querySelector('.form-check-input').checked) {
+                        widgetNames.push(item.querySelector('.widgetName').textContent);
+                    }
+                });
+            orderInput.value = widgetNames.join(",");
+        }
+        setWidgetOrder();
+
+        let draggingItem = null;
+        list.addEventListener('dragstart', (e) => {
+            draggingItem = e.target.closest("div.sortable-item");
+        });
+        list.addEventListener('touchstart', (e) => {
+            draggingItem = e.target.closest("div.sortable-item");
+        });
+
+        list.addEventListener('dragend', () => {
+            orderInput.textContent = ""
+            setWidgetOrder();
+            draggingItem = null;
+        });
+        list.addEventListener('touchend', () => {
+            orderInput.textContent = ""
+            setWidgetOrder();
+            draggingItem = null;
+        });
+
+        list.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            const draggingOverItem = getDragAfterElement(list, e.clientY);
+            if (draggingOverItem) {
+                list.insertBefore(draggingItem, draggingOverItem);
+            } else {
+                list.appendChild(draggingItem);
+            }
+        });
+        list.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const draggingOverItem = getDragAfterElement(list, e.touches[0].clientY);
+            if (draggingOverItem) {
+                list.insertBefore(draggingItem, draggingOverItem);
+            } else {
+                list.appendChild(draggingItem);
+            }
+        });
+
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.sortable-item')];
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+    </script>
+</body>
+</html>

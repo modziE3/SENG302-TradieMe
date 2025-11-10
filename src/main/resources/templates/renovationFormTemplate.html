@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${mode == 'edit' ? 'Edit Renovation' : 'Add Renovation'}"></title>
+    <link th:href="@{/webjars/bootstrap/css/bootstrap.min.css}" rel="stylesheet"/>
+    <link th:href="@{/css/body.css}" rel="stylesheet">
+    <link th:href="@{/css/button.css}" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" th:href="@{./favicon.ico}">
+    <style>
+        #suggestions {
+            border: 1px solid #ccc;
+            max-width: 400px;
+            position: absolute;
+            background: white;
+            z-index: 1;
+        }
+        .suggestion {
+            padding: 5px;
+            cursor: pointer;
+        }
+        .suggestion:hover {
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body class="d-flex justify-content-center align-items-center">
+<div class="container py-4">
+    <div class="rounded card p-4 shadow-sm mx-auto" style="max-width: 500px;">
+        <div class="jumbotron text-center">
+            <h4 class="display-4" th:text="${mode == 'edit' ? 'Edit Renovation' : 'Add Renovation'}"></h4>
+        </div>
+        <form id="renovationForm" th:action="@{${mode == 'edit' ? '/my-renovations/edit-renovation?recordId='+recordId :
+    '/my-renovations/create-renovation'}}" method="post" class="d-block">
+            <div class="mb-3">
+                <label for="renovationTitle" class="form-label">Name*</label>
+                <input type="text" class="form-control" id="renovationTitle" autocomplete="off"
+                       th:name="title" th:value="${renoName}" data-cy="title">
+                <div id="renovationTitleErrorMessage" th:text="${renovationTitleErrorMessage}" class="invalid-feedback"></div>
+            </div>
+            <div>
+                <label for="renovationDescription" class="form-label">Description*</label>
+                <textarea class="form-control" id="renovationDescription" autocomplete="off"
+                          th:name="description"
+                          th:text="${renoDescription}"
+                          data-cy="description"></textarea>
+                <div id="renovationDescriptionErrorMessage"
+                     th:text="${renovationDescriptionErrorMessage}"
+                     class="invalid-feedback"></div>
+            </div>
+            <div id="descriptionHelpBlock" class="form-text mb-3" th:text="${descLen}">
+                0/512
+            </div>
+            <div class="row">
+                <div class="mb-3 col-md-6 position-relative">
+                    <div class="d-flex">
+                        <label for="streetAddress" class="form-label">Street Address</label>
+                    </div>
+                    <input type="text" class="form-control" id="streetAddress" autocomplete="off"
+                           th:name="streetAddress" th:value="${streetAddress}">
+                    <div id="suggestions" class="position-absolute"></div>
+                    <div id="streetAddressErrorMessage" th:text="${addressErrorMessage}" class="invalid-feedback"></div>
+                </div>
+                <div class="mb-3 col-md-6">
+                    <div class="d-flex">
+                        <label for="suburb" class="form-label">Suburb</label>
+                        <label style="color: #555555; font-size: 12px; translate: 4px 2px">(optional)</label>
+                    </div>
+                    <input type="text" class="form-control" id="suburb" autocomplete="off"
+                           th:name="suburb" th:value="${suburb}">
+                    <div id="suburbErrorMessage" th:text="${suburbErrorMessage}" class="invalid-feedback"></div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="mb-3 col-md-6">
+                    <div class="d-flex">
+                        <label for="city" class="form-label">City</label>
+                    </div>
+                    <input type="text" class="form-control" id="city" autocomplete="off"
+                           th:name="city" th:value="${city}">
+                    <div id="cityErrorMessage" th:text="${cityErrorMessage}" class="invalid-feedback"></div>
+                </div>
+                <div class="mb-3 col-md-6">
+                    <div class="d-flex">
+                        <label for="country" class="form-label">Country</label>
+                    </div>
+                    <input type="text" class="form-control" id="country" autocomplete="off"
+                           th:name="country" th:value="${country}">
+                    <div id="countryErrorMessage" th:text="${countryErrorMessage}" class="invalid-feedback"></div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="mb-3 col-md-4">
+                    <div class="d-flex">
+                        <label for="postcode" class="form-label">Postcode</label>
+                    </div>
+                    <input type="text" class="form-control" id="postcode" autocomplete="off"
+                           th:name="postcode" th:value="${postcode}">
+                    <div id="postcodeErrorMessage" th:text="${postcodeErrorMessage}" class="invalid-feedback"></div>
+                </div>
+                <div class="mb-3 col-md-4">
+                    <div class="d-flex">
+                        <label for="latitude" class="form-label">Latitude</label>
+                        <label style="color: #555555; font-size: 12px; translate: 4px 2px">(optional)</label>
+                    </div>
+                    <input type="text" class="form-control" id="latitude" autocomplete="off"
+                           th:name="latitude" th:value="${latitude}">
+                    <div id="latitudeErrorMessage" th:text="${postcodeErrorMessage}" class="invalid-feedback"></div>
+                </div>
+                <div class="mb-3 col-md-4">
+                    <div class="d-flex">
+                        <label for="longitude" class="form-label">Longitude</label>
+                        <label style="color: #555555; font-size: 12px; translate: 4px 2px">(optional)</label>
+                    </div>
+                    <input type="text" class="form-control" id="longitude" autocomplete="off"
+                           th:name="longitude" th:value="${longitude}">
+                    <div id="longitudeErrorMessage" th:text="${longitudeErrorMessage}" class="invalid-feedback"></div>
+                </div>
+            </div>
+            <div class="text-center">
+                <h5 class="display-5">Rooms</h5>
+            </div>
+            <div class="d-flex align-items-start mb-3">
+                <div class="flex-grow-1 me-3">
+                    <input type="text" id="renovationRoom" class="form-control me-5" placeholder="Enter Room Name" autocomplete="off">
+                    <div id="renovationRoomErrorMessage" th:text="${renovationRoomErrorMessage}" class="invalid-feedback"></div>
+                </div>
+                <button class="btn btn-primary" type="button" id="addRoomBtn">Add Room</button>
+            </div>
+            <ul id="displayRoomList" class="list-group"></ul>
+            <input type="hidden" th:name="rooms" id="hiddenRoomsList">
+            <div class="mt-3 d-block">
+                <button id="createRecordBtn" type="submit" class="btn btn-primary w-100 mt-3" th:text="${mode == 'edit' ? 'Submit' : 'Create'}"></button>
+                <a th:href="@{${prevPage}}" class="btn btn-secondary w-100 mt-1">Cancel</a>
+            </div>
+            <input type="hidden" th:name="oldName" th:value="${oldName}">
+            <input type="hidden" th:name="id" th:value="${recordId}">
+            <input type="hidden" th:name="prevPage" th:value="${prevPage}">
+            <input type="hidden" th:name="search" th:value="${searched} + '-' + ${search}">
+        </form>
+    </div>
+</div>
+</body>
+
+<script>
+    window.onload = function() {
+        prepopulateDisplayRoomsList();
+        const inputFields = ["renovationTitle", "renovationDescription", "renovationRoom", "streetAddress", "suburb", "city", "postcode", "country"];
+        inputFields.forEach((inputField) => {
+            if (document.getElementById(inputField + "ErrorMessage").textContent !== "") {
+                document.getElementById(inputField).classList.add("is-invalid");
+            }
+        })
+    }
+
+    // Adds all current renovation record rooms to the form
+    function prepopulateDisplayRoomsList() {
+        let rooms = "[[${renoRooms}]]";
+        rooms = rooms.slice(1, -1)
+        if (rooms != "") {
+            const roomArray = rooms.split('`').map(room => room.trim());
+            for (let room of roomArray) {
+                addDisplayRoom(""+room);
+            }
+        }
+    }
+
+    // Adds a new room to the form
+    function addDisplayRoom(roomName) {
+        const roomList = document.getElementById("displayRoomList")
+        const roomItem = document.createElement("li");
+        roomItem.textContent = roomName;
+        roomItem.className = "list-group-item d-flex justify-content-between align-item-center";
+        const removeButton = document.createElement("button");
+        removeButton.textContent = "Delete";
+        removeButton.className = "btn btn-danger btn-sm ";
+        removeButton.addEventListener("click", function () {
+            roomList.removeChild(roomItem);
+            updateHiddenRoomList();
+        })
+        roomItem.appendChild(removeButton);
+        roomList.appendChild(roomItem);
+        updateHiddenRoomList();
+    }
+
+    // Defining what each input field should do if the Enter key is pressed
+    document.querySelectorAll("input").forEach((input) => {
+        input.addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                if (input.id === "renovationRoom") {
+                    document.getElementById("addRoomBtn").click();
+                } else {
+                    document.getElementById("renovationForm").submit();
+                }
+            }
+        });
+    });
+
+    // Displays error message for invalid room name
+    document.getElementById("addRoomBtn").addEventListener("click", function (){
+        const roomName = document.getElementById("renovationRoom").value.trim()
+        const roomNameList = Array.from(document.querySelectorAll("#displayRoomList li"))
+            .map(li => li.textContent.slice(0, li.textContent.length - 6));
+        const maxRoomNameLength = 150;
+        const regex = /[^\p{L}\p{N} .,'-]/gu; //Regex found from ChatGPT
+        if (roomName === "") {
+            document.getElementById("renovationRoom").classList.add("is-invalid");
+            document.getElementById("renovationRoomErrorMessage").textContent = "Please enter a room name";
+        } else if (regex.test(roomName)) {
+            document.getElementById("renovationRoom").classList.add("is-invalid");
+            document.getElementById("renovationRoomErrorMessage").textContent = " Renovation record room names must only include letters, " +
+                "numbers, spaces, dots, commas, hyphens or apostrophes"
+        } else if (roomNameList.includes(roomName)) {
+            document.getElementById("renovationRoom").classList.add("is-invalid");
+            document.getElementById("renovationRoomErrorMessage").textContent = "Room name is not unique";
+        } else if (roomName.length > maxRoomNameLength) {
+            document.getElementById("renovationRoom").classList.add("is-invalid");
+            document.getElementById("renovationRoomErrorMessage").textContent = "Renovation record room names must be 150 characters or less"
+        } else {
+            document.getElementById("renovationRoom").value = "";
+            document.getElementById("renovationRoom").classList.remove("is-invalid");
+            document.getElementById("renovationRoomErrorMessage").textContent = "";
+            addDisplayRoom(roomName);
+        }
+    });
+
+    // The following code for getting the list of rooms entered into the form was created with the help of ChatGPT
+    // Updates the list of room names the form will submit
+    function updateHiddenRoomList() {
+        let listItems = Array.from(document.querySelectorAll("#displayRoomList li"))
+            .map(li => li.textContent.slice(0, li.textContent.length - 6)).join("`");
+
+        document.getElementById("hiddenRoomsList").value = JSON.stringify(listItems);
+    }
+
+    // Gets the length of the renovation description
+    document.getElementById("renovationDescription").addEventListener("input", function() {
+        const text = document.getElementById("renovationDescription").value;
+        const length = [...text].length; // Spread into an array of code points
+        document.getElementById("descriptionHelpBlock").textContent = length + "/512";
+    })
+
+    // Location autocomplete
+    const input = document.getElementById('streetAddress');
+    const suggestionsBox = document.getElementById('suggestions');
+    const suburbField = document.getElementById('suburb');
+    const cityField = document.getElementById('city');
+    const postcodeField = document.getElementById('postcode');
+    const countryField = document.getElementById('country');
+    const longitudeField = document.getElementById('longitude');
+    const latitudeField = document.getElementById('latitude');
+    let timeoutId;
+
+    input.addEventListener('input', () => {
+        clearTimeout(timeoutId);
+        const query = input.value.trim();
+
+        if (!query) {
+            suggestionsBox.innerHTML = '';
+            return;
+        }
+
+        timeoutId = setTimeout(async () => {
+            const fullUrl = `../suggest?q=${encodeURIComponent(query)}`;
+            const response = await fetch(fullUrl);
+            const suggestions = await response.json();
+
+            suggestionsBox.innerHTML = '';
+
+            if (suggestions.length === 0) {
+                const div = document.createElement('div');
+                div.className = 'suggestion text-muted';
+                div.textContent = 'No location suggestions are available';
+                suggestionsBox.appendChild(div);
+                return;
+            }
+
+            suggestions.forEach(suggestion => {
+                const [street, suburb, city, postcode, country, lat, lon, fullAddress] = suggestion;
+
+                const div = document.createElement('div');
+                div.className = 'suggestion';
+                div.textContent = fullAddress;
+
+                div.addEventListener('click', () => {
+                    input.value = street;
+                    suggestionsBox.innerHTML = '';
+
+                    if (suburb) suburbField.value = suburb;
+                    if (city) cityField.value = city;
+                    if (postcode) postcodeField.value = postcode;
+                    if (country) countryField.value = country;
+                    if (lat) latitudeField.value = lat;
+                    if (lon) longitudeField.value = lon;
+                });
+
+                suggestionsBox.appendChild(div);
+            });
+        }, 100);
+    });
+
+</script>
+</html>

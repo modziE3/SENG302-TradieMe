@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Post Job</title>
+    <link th:href="@{/webjars/bootstrap/css/bootstrap.min.css}" rel="stylesheet"/>
+    <link th:href="@{/css/body.css}" rel="stylesheet">
+    <link th:href="@{/css/button.css}" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" th:href="@{./favicon.ico}">
+</head>
+<body class="d-flex justify-content-center align-items-center">
+<div class="container py-4">
+    <div class="rounded card p-4 shadow-sm mx-auto" style="max-width: 500px;">
+        <div class="jumbotron text-center">
+            <h4 class="display-4">Post Job</h4>
+        </div>
+        <i th:class="${jobIcon}" style="font-size: 48px; display: block; margin: auto"></i>
+        <form th:action="@{/my-renovations/post-job(jobId=${jobId})}"
+              method="post" id="jobForm">
+            <div class="mb-3">
+                <label for="jobName" class="form-label">Name</label>
+                <input type="text" class="form-control" id="jobName" autocomplete="off"
+                       th:name="jobName" th:value="${jobName}">
+                <div id="jobNameErrorMessage" th:text="${jobNameErrorMessage}" class="invalid-feedback"></div>
+            </div>
+            <div>
+                <label for="jobDescription" class="form-label">Description</label>
+                <textarea class="form-control" id="jobDescription"
+                          th:name="jobDescription"
+                          th:text="${jobDescription}"></textarea>
+                <div id="jobDescriptionErrorMessage"
+                     th:text="${jobDescriptionErrorMessage}"
+                     class="invalid-feedback"></div>
+            </div>
+            <div id="descriptionHelpBlock" class="form-text mb-3" th:text="${descriptionLength}">
+                0/512
+            </div>
+            <div class="mb-3">
+                <label for="jobType" class="form-label">Job Type</label>
+                <select class="form-select" id="jobType" th:name="jobType">
+                    <option th:value="'No Type'" selected>No Type</option>
+                    <option th:value="Carpentry">Carpentry</option>
+                    <option th:value="Electrical">Electrical</option>
+                    <option th:value="Plumbing">Plumbing</option>
+                    <option th:value="Insulating">Insulating</option>
+                    <option th:value="Plastering">Plastering</option>
+                    <option th:value="Painting">Painting</option>
+                </select>
+                <div id="jobTypeErrorMessage" th:text="${jobTypeErrorMessage}" class="invalid-feedback"></div>
+            </div>
+            <div class="mb-3">
+                <label for="jobStartDate" class="form-label">Start Date</label>
+                <input type="text" class="form-control" id="jobStartDate" placeholder="DD/MM/YYYY" autocomplete="off"
+                       th:name="jobStartDate" th:value="${jobStartDate}">
+                <div id="jobStartDateErrorMessage" th:text="${jobStartDateErrorMessage}" class="invalid-feedback"></div>
+            </div>
+            <div class="mb-3">
+                <label for="jobDueDate" class="form-label">Due Date</label>
+                <input type="text" class="form-control" id="jobDueDate" placeholder="DD/MM/YYYY" autocomplete="off"
+                       th:name="jobDueDate" th:value="${jobDueDate}">
+                <div id="jobDueDateErrorMessage" th:text="${jobDueDateErrorMessage}" class="invalid-feedback"></div>
+            </div>
+            <div class="mt-3">
+                <button type="submit" formnovalidate class="btn btn-primary w-100 mt-3">Post</button>
+                <a th:href="@{/my-renovations/details(recordId=${renovationRecord.getId()})}"
+                   class="btn btn-secondary w-100 mt-1">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+    window.onload = function() {
+        const inputFields = ["jobName", "jobDescription", "jobType", "jobDueDate", "jobStartDate"];
+        inputFields.forEach((inputField) => {
+            if (document.getElementById(inputField + "ErrorMessage").textContent !== "") {
+                document.getElementById(inputField).classList.add("is-invalid");
+            }
+        })
+
+        const type = `[[${jobType}]]`;
+        document.querySelectorAll("option").forEach(option => {
+            option.selected = (option.value === type);
+        })
+    };
+
+    document.getElementById("jobDescription").addEventListener("input", function() {
+        const text = document.getElementById("jobDescription").value;
+        const length = [...text].length; // Spread into an array of code points
+        document.getElementById("descriptionHelpBlock").textContent = length + "/512";
+    })
+</script>
+</body>
+</html>

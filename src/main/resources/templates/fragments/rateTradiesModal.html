@@ -1,0 +1,101 @@
+<!-- fragments.html -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<div th:fragment="rateTradiesModal(tradies, navJobs, jobId)">
+<style>
+  .star-rating {
+    direction: rtl;
+    display: inline-block;
+    cursor: pointer;
+  }
+
+  .star-rating input {
+    display: none;
+  }
+
+  .star-rating label {
+    color: #ddd;
+    font-size: 24px;
+    padding: 0 2px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .star-rating label:hover,
+  .star-rating label:hover~label,
+  .star-rating input:checked~label {
+    color: #ffc107;
+  }
+</style>
+<body>
+
+  <!--Modal for rating tradies-->
+  <div class="modal fade" data-bs-keyboard="false" data-bs-backdrop="static" tabindex="-1" id="rateTradiesModal">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+      <form id="ratingsForm" th:action="@{/rate-tradie} + ${navJobs ? '#nav-jobs' : ''}" method="post">
+        <div class="modal-body text-center">
+          Rate the tradies you worked with
+          <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-12 mb-1" th:each = "tradie, i : ${tradies}">
+                  <div class="rating-card p-4">
+                    <h5 th:text = "${tradie.getFirstName() + ' ' + tradie.getLastName()}" class="mb-2"></h5>
+                    <div class="star-rating animated-stars d-flex justify-content-center">
+                        <input type="radio" th:id="'star5-' + ${i.index}" th:name="'rating-' + ${tradie.id}" value="5">
+                        <label th:for="'star5-' + ${i.index}">★</label>
+                        <input type="radio" th:id="'star4-' + ${i.index}" th:name="'rating-' + ${tradie.id}" value="4">
+                        <label th:for="'star4-' + ${i.index}">★</label>
+                        <input type="radio" th:id="'star3-' + ${i.index}" th:name="'rating-' + ${tradie.id}" value="3">
+                        <label th:for="'star3-' + ${i.index}">★</label>
+                        <input type="radio" th:id="'star2-' + ${i.index}" th:name="'rating-' + ${tradie.id}" value="2">
+                        <label th:for="'star2-' + ${i.index}">★</label>
+                        <input type="radio" th:id="'star1-' + ${i.index}" th:name="'rating-' + ${tradie.id}" value="1">
+                        <label th:for="'star1-' + ${i.index}">★</label>
+                        <input type="hidden" th:name="ratings" id="ratings">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="cancelRateTradies" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Submit</button>
+        </div>
+              <input type="hidden" th:name="jobId" th:value="${jobId}">
+      </form>
+      </div>
+    </div>
+  </div>
+
+</body>
+<script>
+  document.querySelectorAll('.star-rating:not(.readonly) label').forEach(star => {
+    star.addEventListener('click', function() {
+      this.style.transform = 'scale(1.2)';
+      setTimeout(() => {
+        this.style.transform = 'scale(1)';
+      }, 200);
+    });
+  });
+
+  document.getElementById("ratingsForm").addEventListener("submit", function (e) {
+      e.preventDefault()
+
+      const formData = new FormData(this);
+      const ratings = [];
+
+      for (const [name, value] of formData.entries()) {
+          if (name.startsWith("rating-")) {
+              const tradieId = name.split("-")[1]; // extract id from "rating-123"
+              ratings.push({ tradieId: tradieId, rating: value });
+          }
+      }
+
+      document.getElementById("ratings").value = JSON.stringify(ratings);
+      this.submit();
+  })
+</script>
+</div>
+</html>

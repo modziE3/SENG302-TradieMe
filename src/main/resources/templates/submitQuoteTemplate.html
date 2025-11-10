@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Submit Quote</title>
+    <link th:href="@{/webjars/bootstrap/css/bootstrap.min.css}" rel="stylesheet"/>
+    <link th:href="@{/css/body.css}" rel="stylesheet">
+    <link th:href="@{/css/button.css}" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" th:href="@{./favicon.ico}">
+</head>
+<body class="d-flex justify-content-center align-items-center">
+<div class="container py-4">
+    <div class="rounded card p-4 shadow-sm mx-auto" style="max-width: 500px;">
+        <div class="jumbotron text-center">
+            <h4 class="display-4">Submit Quote</h4>
+        </div>
+        <form id="renovationForm" th:action="@{/submit-quote(jobId=${jobId})}" method="post" class="d-block">
+            <div class="row">
+                <div class="mb-3 position-relative col-md-6">
+                    <label for="price" class="form-label">Price</label>
+                    <div class="input-group mb-3">
+                        <span class="input-group-text">$</span>
+                        <input type="text" class="form-control w-35" id="price" autocomplete="off"
+                               th:name="price" th:value="${price}">
+                        <div id="priceErrorMessage" th:text="${priceErrorMessage}" class="invalid-feedback"></div>
+                    </div>
+                </div>
+                <div class="mb-3 col-md-6">
+                    <label for="workTime" class="form-label">Estimated Work Time (hours)</label>
+                    <input type="text" class="form-control" id="workTime" placeholder="e.g. 3"
+                           th:name="workTime" th:value="${workTime}">
+                    <div id="workTimeErrorMessage" th:text="${workTimeErrorMessage}" class="invalid-feedback"></div>
+                </div>
+            </div>
+            <div>
+                <div class="d-flex">
+                    <label for="description" class="form-label">Description</label>
+                    <label style="color: #555555; font-size: 12px; translate: 4px 2px">(optional)</label>
+                </div>
+                <textarea type="text" class="form-control" id="description" autocomplete="off"
+                          th:name="description" th:value="${description}"></textarea>
+                <div id="descriptionErrorMessage" th:text="${descriptionErrorMessage}" class="invalid-feedback"></div>
+            </div>
+            <div id="descriptionHelpBlock" class="form-text mb-3" th:text="${descLen}">
+                0/512
+            </div>
+            <p class="fs-4">Contact Details (choose at least one):
+            <div class="row">
+                <div class="mb-3 position-relative col-md-6">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="text" class="form-control" id="email"
+                           th:name="email" th:value="${email}" data-cy="title">
+                    <div id="emailErrorMessage" th:text="${emailErrorMessage}" class="invalid-feedback"></div>
+                </div>
+                <div class="mb-3 col-md-6">
+                    <label for="phoneNumber" class="form-label">Phone Number</label>
+                    <input type="text" class="form-control" id="phoneNumber"
+                           th:name="phoneNumber" th:value="${phoneNumber}" data-cy="title">
+                    <div id="phoneNumberErrorMessage" th:text="${phoneNumberErrorMessage}" class="invalid-feedback"></div>
+                </div>
+            </div>
+            <input type="hidden" id="quoted">
+            <div id="quotedErrorMessage" th:text="${quotedErrorMessage}" class="invalid-feedback"></div>
+            <div class="mt-3">
+                <button id="createExpenseBtn" type="submit" formnovalidate class="btn btn-primary w-100 mt-3">Submit</button>
+                <a th:href="@{/my-renovations/job-details(jobId=${jobId},fromSearch=true)}" class="btn btn-secondary w-100 mt-1">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+    window.onload = function() {
+        const inputFields = ["price", "workTime", "description", "email", "phoneNumber", "quoted"];
+        inputFields.forEach((inputField) => {
+            if (document.getElementById(inputField + "ErrorMessage").textContent !== "") {
+                document.getElementById(inputField).classList.add("is-invalid");
+            }
+        })
+        document.getElementById("description").defaultValue = `[[${description}]]`;
+    };
+</script>
+</body>
+</html>

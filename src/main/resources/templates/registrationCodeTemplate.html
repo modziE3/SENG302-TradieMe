@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Verify Registration Code</title>
+    <link th:href="@{/webjars/bootstrap/css/bootstrap.min.css}" rel="stylesheet">
+    <link th:href="@{/css/styles.css}" rel="stylesheet">
+    <link th:href="@{/css/body.css}" rel="stylesheet">
+    <link th:href="@{/css/button.css}" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" th:href="@{./favicon.ico}">
+</head>
+<body class="d-flex justify-content-center align-items-center">
+<div class="container">
+    <div class="rounded card p-4 shadow-sm mx-auto" style="max-width: 500px;">
+        <div class="text-center mb-3">
+            <h4 class="display-4">Please Verify</h4>
+        </div>
+        <div th:if="${errorMessage}" class="alert alert-danger">
+            <span th:text="${errorMessage}"></span>
+        </div>
+        <form th:action="@{/registration-code}" method="post">
+            <div>
+                <label for="verificationCode">Registration Code</label>
+                <input type="text" class="form-control" id="verificationCode"
+                       th:name="verificationCode" th:value="*{verificationCode}">
+                <div id="verificationCodeErrorMessage" th:text="${verificationCodeErrorMessage}" class="invalid-feedback"></div>
+            </div>
+            <button class="btn btn-primary w-100 mt-3" type="submit">Confirm</button>
+            <a class="btn btn-secondary w-100 mt-1" th:href="@{/login}">Cancel</a>
+        </form>
+    </div>
+</div>
+<script>
+    window.onload = function() {
+        if (document.getElementById("verificationCodeErrorMessage").textContent !== "") {
+            document.getElementById("verificationCode").classList.add("is-invalid");
+        }
+    };
+</script>
+</body>
+</html>

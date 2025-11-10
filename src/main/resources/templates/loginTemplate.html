@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Login</title>
+        <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+        <link th:href="@{/css/styles.css}" rel="stylesheet">
+        <link th:href="@{/css/body.css}" rel="stylesheet">
+        <link th:href="@{/css/button.css}" rel="stylesheet">
+        <link rel="icon" type="image/x-icon" th:href="@{./favicon.ico}">
+    </head>
+    <body>
+        <div class="container d-flex justify-content-center align-items-center vh-100">
+            <div class="rounded card p-4 shadow-sm mx-auto" style="width: 500px;">
+                <div class="d-flex justify-content-center">
+                    <img th:src="@{'/images/TradieMeLogo.png'}" class="logo-large" alt="" loading="lazy" style="border: 0px solid #c7c7c7" >
+                </div>
+                <div class="text-center mb-3">
+                    <h4 class="display-4">Login To TradieMe</h4>
+                </div>
+                <form th:action="@{/login}" method="post">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Email</label>
+                        <input type="text" class="form-control" id="username"
+                               th:name="username" data-cy="email" th:value="${userEmail}">
+                        <div id="usernameErrorMessage" th:text="${errorMessageEmail}" class="invalid-feedback"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password"
+                               th:name="password" data-cy="password">
+                        <div id="passwordErrorMessage" th:text="${errorMessagePassword}"  class="invalid-feedback"></div>
+                    </div>
+                    <div th:if="${errorMessage != null and #strings.trim(errorMessage) != ''}"
+                         class="alert alert-danger mt-3" role="alert">
+                        <span th:text="${errorMessage}"></span>
+                    </div>
+                    <div th:if="${confirmationMessage != null and #strings.trim(confirmationMessage) != ''}"
+                         class="alert alert-success mt-3" role="alert">
+                        <span th:text="${confirmationMessage}"></span>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 mt-3" id="loginButton">Login</button>
+                </form>
+                <div class="d-flex flex-column text-center mt-1">
+                    <a th:href="@{/registration-form}" id="registrationForm">Not registered? Create an account</a>
+                    <a th:href="@{/forgot-password}">Forgot your password?</a>
+                </div>
+            </div>
+        </div>
+        <script>
+            window.onload = function() {
+                const inputFields = ["username", "password"];
+                inputFields.forEach((inputField) => {
+                    if (document.getElementById(inputField + "ErrorMessage").textContent !== "") {
+                        document.getElementById(inputField).classList.add("is-invalid");
+                    }
+                })
+            };
+        </script>
+    </body>
+</html>

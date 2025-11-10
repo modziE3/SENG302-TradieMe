@@ -1,0 +1,416 @@
+.dropdown:hover .dropdown-menu {
+    display: block;
+}
+
+.custom-dropdown {
+    transform: translate(-30px, 0px);
+}
+
+.navbar-toggler:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+body {
+    background-image: url("../images/background.png");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    margin: 0;
+    min-height: 100vh;
+}
+.avatar {
+    border-color: #272727;
+    vertical-align: middle;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+}
+
+.avatar-large {
+    border-color: #272727;
+    vertical-align: middle;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+}
+
+.page-link {
+    font-size: 80%;
+}
+
+/* chatgpt told me how to do this*/
+.header-container {
+    display: flex;
+    align-items: center;
+}
+
+.button {
+    background-color: #b4b4b4;
+    border-radius: 5px;
+    color: #272727;
+    border: none;
+    padding: 5px 10px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin-left: 20px;
+}
+
+img {
+    border: 5px solid #c7c7c7;
+    border-radius: 15px;
+    width: 100%;
+    height: auto;
+}
+
+/*.row{*/
+/*    align-items: stretch;*/
+/*    display: flex;*/
+/*    flex-direction: row;*/
+/*    flex-wrap: nowrap;*/
+/*    overflow-x: scroll;*/
+/*    overflow-y: hidden;*/
+/*}*/
+
+/* Use grid layout for the icons */
+.icon-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); /* Adjusts the number of columns */
+    gap: 10px; /* Space between items */
+    width: 100%; /* Ensures it takes the full width of the dropdown */
+}
+
+/* Circular and larger button */
+.icon-picker-btn {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.3s, color 0.3s;
+    border: none;
+}
+
+/* Remove Bootstrap's dropdown arrow */
+.icon-picker-btn::after {
+    display: none !important;
+}
+
+/* Default grey plus when no icon is selected */
+.icon-picker-btn.no-icon {
+    background: #f0f0f0;
+    color: #888;
+}
+
+/* Darker grey plus on hover */
+.icon-picker-btn.no-icon:hover {
+    background: #ddd;
+    color: #555;
+}
+
+/* Icon selection styling */
+.icon-option {
+    font-size: 24px;
+    padding: 10px;
+    cursor: pointer;
+}
+
+.icon-option:hover {
+    color: #007bff;
+}
+
+/* Styling for the remove (X) option */
+.icon-remove {
+    font-size: 24px;
+    padding: 10px;
+    cursor: pointer;
+    color: red;
+}
+
+.icon-remove:hover {
+    color: darkred;
+}
+
+#suggestions {
+    border: 1px solid #ccc;
+    max-width: 200px;
+    position: absolute;
+    background: white;
+}
+.suggestion {
+    padding: 5px;
+    cursor: pointer;
+}
+.suggestion:hover {
+    background-color: #f0f0f0;
+}
+.notstarted {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: #fff;
+    text-align: center;
+}
+
+.inprogress {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: #fff;
+    text-align: center;
+}
+
+.completed {
+    background-color: #198754;
+    border-color: #198754;
+    color: #ffffff;
+    text-align: center;
+}
+
+.cancelled {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: #ffffff;
+    text-align: center;
+}
+
+.blocked {
+    background-color: #ffc107;
+    border-color: #ffc107;
+    color: #000000;
+    text-align: center;
+}
+
+.pending {
+    background-color: #ffc107;
+    border-color: #ffc107;
+    color: #000000;
+    text-align: center;
+}
+
+.accepted {
+    background-color: #198754;
+    border-color: #198754;
+    color: #ffffff;
+    text-align: center;
+}
+
+.rejected {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: #ffffff;
+    text-align: center;
+}
+
+.directory a {
+    text-decoration: underline;
+    color: #000;
+    transition: color 0.2s ease;
+    margin: 0 2px;
+}
+
+.directory a:hover {
+    color: blue;
+}
+
+.directory .separator {
+    color: #888;
+    margin: 0 2px;
+}
+.job-listing-card {
+    padding: 10px 5px;
+    max-width: 410px;
+    border-radius: 5px;
+    border: 1px solid #939393;
+    background: #ffffff;
+    box-shadow: 4px 4px 4px rgba(199, 199, 199, 0.11);
+}
+.job-container-card {
+    padding: 10px 5px;
+    min-width: 300px;
+    border-radius: 5px;
+    border: 1px solid #939393;
+    background: #ffffff;
+    box-shadow: 4px 4px 4px rgba(199, 199, 199, 0.11);
+}
+.hot-tradie-card {
+    padding: 10px;
+    min-width: 300px;
+    border-radius: 5px;
+    border: 1px solid #939393;
+    background: #ffffff;
+    box-shadow: 4px 4px 4px rgba(199, 199, 199, 0.11);
+    margin-bottom: 10px;
+    flex: 1;
+    justify-content: space-between;
+}
+.cut-text {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    height: 1.2em;
+    white-space: nowrap;
+}
+.job-title {
+    margin: 2px 0;
+    width: 160px;
+    padding-left: 4px;
+    font-size: clamp(16px, 2vw, 20px);
+    text-decoration: underline;
+    line-height: normal;
+}
+.job-small-text {
+    line-height: normal;
+    margin: 2px 0;
+    width: 160px;
+    padding-left: 4px;
+    font-size: clamp(12px, 2vw, 16px);
+}
+.job-med-text {
+    margin: -9px 0;
+    width: 320px;
+    padding-left: 4px;
+    font-size: 16px;
+    line-height: normal;
+}
+.job-listing-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 15px;
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    max-height: 75vh;
+    overflow-y: auto;
+}
+
+.renovation-listing-list {
+    display: grid;
+    grid-template-columns: 410px 1fr 1fr 1fr;
+    gap: 15px;
+    list-style-type: none;
+    margin: 0;
+    max-width: 90vw;
+    overflow-x: auto;
+    padding-bottom: 10px;
+}
+
+ul.job-listing-list li {
+    margin-bottom: 4px;
+}
+
+.renovation-listing-item {
+    grid-row: 1;
+    margin-bottom: 4px;
+}
+
+.directory {
+    font-family: sans-serif;
+    font-size: clamp(12px, 2vw, 16px);
+}
+
+.suggestions{
+    width: 100%;
+    border: 1px solid #ccc;
+    max-height: 150px;
+    overflow-y: auto;
+    margin-top: 4px;
+    padding: 0;
+    list-style: none;
+    background: white;
+}
+
+.suggestions li {
+    padding: 8px;
+    cursor: pointer;
+}
+
+.suggestions li:hover {
+    background-color: lightgray;
+    cursor: pointer;
+}
+
+.small-scroll-bar-list {
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+}
+
+.small-scroll-bar-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.small-scroll-bar-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.small-scroll-bar-list::-webkit-scrollbar-thumb {
+    background-color: #999;
+    border-radius: 3px;
+}
+
+.small-scroll-bar-list {
+    scrollbar-width: thin;
+    scrollbar-color: #999 transparent;
+}
+.mb-30px {
+    margin-bottom: -30px;
+}
+.inline-icon {
+    width: 1.5em;
+    height: 1.5em;
+    vertical-align: middle;
+    margin-right: 0.25em;
+    translate: 13px -3px;
+    border: 0;
+}
+.completed-job-card {
+    padding: 10px 5px;
+    max-width: 250px;
+    border-radius: 5px;
+    border: 1px solid #939393;
+    background: #ffffff;
+    box-shadow: 4px 4px 4px rgba(199, 199, 199, 0.11);
+}
+
+
+.container-overlay {
+    position: relative;
+    height: 7.31vw
+}
+
+.background-element {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+.overlay-element {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    z-index: 2;
+}
+.logo-large {
+    border-color: rgba(39, 39, 39, 0);
+    vertical-align: middle;
+    width: 120px;
+    height: 120px;
+}
+.logo-small {
+    border-color: rgba(39, 39, 39, 0);
+    vertical-align: middle;
+    width: 40px;
+    height: 40px;
+}
+#leftTradieCard,
+#rightTradieCard {
+    position: absolute;
+    cursor: grab;
+    transition: all 0.3s ease;
+    will-change: left, right, transform;
+}

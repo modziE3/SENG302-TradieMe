@@ -1,0 +1,251 @@
+<div th:fragment="calendar">
+    <style>
+        .fc-header-toolbar .fc-toolbar-chunk:nth-child(2) {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin: 3px;
+        }
+    </style>
+    <div class="container rounded mb-3 mt-3 bg-white" id='calendar'></div>
+    <script th:src="@{/webjars/fullcalendar/6.1.15/index.global.js}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const holdDelay = 500;
+            const doubleClickDelay = 250;
+            let longPressTimer;
+            let homepage = false;
+            let recordId = `[[${recordId}]]`;
+            let recordIds = `[[${recordIds}]]`;
+            recordIds = recordIds.slice(1, -1).split(", ");
+            if (recordId === "") {
+                homepage = true;
+            }
+            let jobIds = `[[${jobIds}]]`;
+            jobIds = jobIds.slice(1, -1).split(", ");
+            let jobNames = `[[${jobNames}]]`;
+            jobNames = jobNames.slice(1, -1).split(", ");
+            let jobStartDates = `[[${jobStartDates}]]`;
+            jobStartDates = jobStartDates.slice(1, -1).split(", ");
+            let jobDueDates = `[[${jobDueDates}]]`;
+            jobDueDates = jobDueDates.slice(1, -1).split(", ");
+            let jobStatuses = `[[${jobStatuses}]]`;
+            jobStatuses = jobStatuses.slice(1, -1).split(", ");
+            let jobWasModified = `[[${jobWasModified}]]`;
+            jobWasModified = jobWasModified.slice(1, -1).split(", ");
+            let isQuotedJob = `[[${isQuotedJob}]]`;
+            isQuotedJob = isQuotedJob.slice(1, -1).split(", ");
+            let lastViewedJob = localStorage.getItem("lastViewedJobFromCalendar");
+            localStorage.removeItem("lastViewedJobFromCalendar");
+            let jobs = [];
+            for (let i = 0; i < jobNames.length; i++) {
+                if (jobStartDates[i] !== "null" || jobDueDates[i] !== "null") {
+                    let editJobFormUrl = '../my-renovations/edit-job?recordId='+recordId+'&jobId='+jobIds[i]+'&fromCalendar=true&fromWidget=false'
+                    let viewJobUrl = '../my-renovations/job-details?jobId='+jobIds[i]+'&fromCalendar=true&fromWidget=false'
+                    if (homepage) {
+                        editJobFormUrl = './my-renovations/edit-job?recordId='+recordIds[i]+'&jobId='+jobIds[i]+'&fromCalendar=false&fromWidget=true'
+                        viewJobUrl = './my-renovations/job-details?jobId='+jobIds[i]+'&fromCalendar=false&fromWidget=true'
+                    }
+                    let job = {
+                        title: jobNames[i],
+                        id: jobIds[i],
+                        extendedProps: {
+                            isQuotedJob: isQuotedJob[i],
+                            editJobFormUrl: editJobFormUrl,
+                            viewJobUrl: viewJobUrl,
+                        }
+                    }
+                    if (jobStartDates[i] !== "null" && jobDueDates[i] !== "null") {
+                        job.start = jobStartDates[i]
+                        job.end = jobDueDates[i]
+                    } else if (jobStartDates[i] === "null" && jobDueDates[i] !== "null") {
+                        job.start = jobDueDates[i]
+                        job.end = null
+                        job.title = jobNames[i] + ' is due'
+                    } else if (jobStartDates[i] !== "null" && jobDueDates[i] === "null") {
+                        job.start = jobStartDates[i]
+                        job.end = null
+                        job.title = jobNames[i] + ' starts'
+                    }
+                    job.classNames = [jobStatuses[i].toLowerCase().replace(" ", ""), "pe-auto"]
+                    if (jobStatuses[i] === "Blocked") {
+                        job.textColor = "black"
+                    }
+                    if (jobWasModified[i] === "true") {
+                        job.borderColor = "black"
+                    }
+                    jobs.push(job)
+                }
+            }
+            var calendarEl = document.getElementById('calendar');
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                customButtons: {
+                    previousMonth: {
+                        text: "",
+                        click: function() {
+                            calendar.prev()
+                            updateMonthButtons()
+                        }
+                    },
+                    nextMonth: {
+                        text: "",
+                        click: function() {
+                            calendar.next()
+                            updateMonthButtons()
+                        }
+                    }
+                },
+                initialView: getResponsiveView(),
+                dayMaxEvents: true,
+                headerToolbar: getHeaderToolbar(),
+                fixedWeekCount: false,
+                events: jobs,
+                eventDidMount: function(info) {
+                    const el = info.el;
+                    el.setAttribute('tabindex', '0');
+                    el.style.borderWidth = '3px';
+                    if (isMobileView()) {
+                        el.addEventListener('click', function () {
+                            localStorage.setItem("currentDate", calendar.getDate().toISOString())
+                            localStorage.setItem('activeTab', "#nav-details")
+                            window.location = info.event.extendedProps.viewJobUrl;
+                        });
+                        if (info.event.extendedProps.isQuotedJob === "false") {
+                            el.addEventListener('touchstart', function() {
+                                longPressTimer = setTimeout(() => {
+                                    localStorage.setItem("currentDate", calendar.getDate().toISOString())
+                                    window.location = info.event.extendedProps.editJobFormUrl;
+                                }, holdDelay);
+                            }, { passive: true });
+                            el.addEventListener('touchend', function() {
+                                clearTimeout(longPressTimer);
+                            });
+                            el.addEventListener('touchcancel', function() {
+                                clearTimeout(longPressTimer);
+                            });
+                        }
+                    } else {
+                        el.addEventListener('click', function () {
+                            if (info._clickTimeout && info.event.extendedProps.isQuotedJob === "false") {
+                                clearTimeout(info._clickTimeout);
+                                info._clickTimeout = null;
+                                localStorage.setItem("currentDate", calendar.getDate().toISOString())
+                                window.location = info.event.extendedProps.editJobFormUrl;
+                            } else {
+                                info._clickTimeout = setTimeout(() => {
+                                    localStorage.setItem("currentDate", calendar.getDate().toISOString())
+                                    localStorage.setItem('activeTab', "#nav-details")
+                                    info._clickTimeout = null
+                                    window.location = info.event.extendedProps.viewJobUrl;
+                                }, doubleClickDelay);
+                            }
+                        });
+                    }
+                },
+                dayCellDidMount: function(info) {
+                    if (!homepage) {
+                        const el = info.el;
+                        // Desktop double-click on day
+                        el.addEventListener('dblclick', function (e) {
+                            // Ignore if clicked on an event inside the day
+                            if (e.target.closest('.fc-event')) return;
+
+                            onDayDoubleClick(info);
+                        });
+
+                        // Mobile long press on day
+                        if (isMobileView()) {
+                            el.addEventListener('touchstart', function (e) {
+                                if (e.target.closest('.fc-event')) return; // ignore touches on events
+
+                                longPressTimer = setTimeout(() => {
+                                    onDayDoubleClick(info);
+                                }, holdDelay);
+                            }, {passive: true});
+
+                            el.addEventListener('touchend', function () {
+                                clearTimeout(longPressTimer);
+                            });
+                            el.addEventListener('touchcancel', function () {
+                                clearTimeout(longPressTimer);
+                            });
+                        }
+                    }
+                },
+                // JavaScript code for changing calendar views for different screen sizes was provided by ChatGPT
+                windowResize: function () {
+                    const newView = getResponsiveView();
+                    if (calendar.view.type !== newView) {
+                        calendar.changeView(newView);
+                        if (isMobileView()) {
+                            document.querySelector('.fc-previousMonth-button').textContent = ""
+                            document.querySelector('.fc-nextMonth-button').textContent = ""
+                        } else {
+                            setTimeout(updateMonthButtons, 0);
+                        }
+                        calendar.setOption('headerToolbar', getHeaderToolbar())
+                    }
+                },
+                eventMouseEnter: function(info) {
+                    info.el.style.cursor = 'pointer';
+                },
+                eventMouseLeave: function(info) {
+                    info.el.style.cursor = '';
+                },
+                datesSet: function() {
+                    updateMonthButtons()
+                }
+            });
+            if (localStorage.getItem("currentDate")) {
+                let currentDate = new Date(localStorage.getItem("currentDate"))
+                calendar.gotoDate(currentDate)
+            }
+            let calendarTab = document.querySelector('#nav-calendar-tab')
+            if (calendarTab != null) {
+                calendarTab.addEventListener('shown.bs.tab', function () {
+                    calendar.render();
+                });
+            } else {
+                calendar.render();
+            }
+            // JavaScript code for changing the month names on the calendar pagination buttons was provided by ChatGPT
+            function updateMonthButtons() {
+                let currentDate = calendar.getDate();
+                let prevMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+                let nextMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
+                let prevMonthName = prevMonth.toLocaleString('default', { month: 'long' });
+                let nextMonthName = nextMonth.toLocaleString('default', { month: 'long' });
+                let previousMonthBtn = document.querySelector('.fc-previousMonth-button')
+                let nextMonthBtn = document.querySelector('.fc-nextMonth-button')
+                if (previousMonthBtn !== null && nextMonthBtn !== null) {
+                    previousMonthBtn.textContent = prevMonthName;
+                    nextMonthBtn.textContent = nextMonthName;
+                }
+            }
+            function getHeaderToolbar() {
+                if (isMobileView()) {
+                    return {
+                        start: 'prev',
+                        center: 'title today',
+                        end: 'next'
+                    }
+                } else {
+                    return {
+                        start: 'previousMonth',
+                        center: 'title today',
+                        end: 'nextMonth'
+                    }
+                }
+            }
+            function getResponsiveView() {
+                return isMobileView() ? 'dayGridWeek' : 'dayGridMonth';
+            }
+            function isMobileView() {
+                return window.innerWidth < 768 || window.innerHeight < 768;
+            }
+            function onDayDoubleClick(info) {
+                window.location = '../my-renovations/create-job?recordId='+recordId+'&fromCalendar=true'
+            }
+        });
+    </script>
+</div>

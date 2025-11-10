@@ -1,0 +1,76 @@
+<div th:fragment="jobImageModalFragment (job)" class="job-modal-template">
+  <div class="modal fade" th:id="'jobDetailsModal' + ${job.getId()}" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <style>
+      .carousel-control-prev-icon,
+      .carousel-control-next-icon {
+        background-color: orange;
+        border-radius: 50%;
+      }
+
+      .carousel-control-prev-icon::after,
+      .carousel-control-next-icon::after {
+        background-color: orange;
+      }
+
+      .carousel.slide:has(.carousel-inner .carousel-item:nth-child(2)) .carousel-control-prev,
+      .carousel.slide:has(.carousel-inner .carousel-item:nth-child(2)) .carousel-control-next {
+        display: block;
+      }
+
+      .carousel.slide:not(:has(.carousel-inner .carousel-item:nth-child(2))) .carousel-control-prev,
+      .carousel.slide:not(:has(.carousel-inner .carousel-item:nth-child(2))) .carousel-control-next {
+        display: none;
+      }
+
+      .carousel-item img{
+        width: 100%;
+        height: 300px;
+        object-fit: contain;
+        display: block;
+        margin: 0 auto;
+      }
+      .modal-content {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .modal-body {
+        overflow-y: auto;
+      }
+    </style>
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" th:text="${job.getName()}"></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p th:text="${job.getDescription()}"></p>
+          <div th:id="'carousel' + ${job.getId()}" class="carousel slide" data-bs-ride="false" data-bs-touch="true" data-bs-interval="false">
+            <div class="carousel-inner">
+              <div th:if="${!job.getImageFilenames().isEmpty()}" th:each="img, iterStat : ${job.getImageFilenames()}"
+                   th:classappend="${iterStat.index == 0} ? ' active'" class="carousel-item">
+                <img th:src="@{'/profileImages/' + ${img}}" class="d-block w-100" alt="Job Image">
+              </div>
+              <div th:if="${job.getImageFilenames().isEmpty()}" class="carousel-item active">
+                <img th:src="@{${(job.getRooms().isEmpty() ? '/images/JobDefault.png' : '/profileImages/' + job.getRooms().getFirst().getImageFilename())}}" class="d-block w-100" alt="Default Job Image">
+              </div>
+            </div>
+            <button class="carousel-control-prev" type="button" th:data-bs-target="'#carousel' + ${job.getId()}" data-bs-slide="prev">
+              <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+              <span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next" type="button" th:data-bs-target="'#carousel' + ${job.getId()}" data-bs-slide="next">
+              <span class="carousel-control-next-icon" aria-hidden="true"></span>
+              <span class="visually-hidden">Next</span>
+            </button>
+
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>My Quotes</title>
+    <link th:href="@{/webjars/bootstrap/css/bootstrap.min.css}" rel="stylesheet"/>
+    <link th:href="@{/css/styles.css}" rel="stylesheet">
+    <link th:href="@{/css/button.css}" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" th:href="@{./favicon.ico}">
+    <style>
+        .rounded {
+            background-color: #f0f0f0;
+            border-radius: 5px;
+            border: 1px solid #939393;
+            padding: 20px;
+            margin: 20px auto;
+            box-shadow: 6px 6px 6px rgba(0, 0, 0, 0.175);
+            min-height: 85vh;
+        }
+    </style>
+</head>
+<body>
+<div th:replace="~{fragments/header :: header}"></div>
+<div class="rounded container mt-3">
+    <div th:insert="~{fragments/breadCrumb :: bread-crumb-nav()}"></div>
+    <div class="mt-3" >
+        <nav style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="nav nav-tabs" id="nav-tab" role="tablist" style="width:100%">
+                <a class="nav-link active" id="nav-details-tab" data-bs-toggle="tab" href="#nav-sent" type="button" role="tab">Sent</a>
+                <a class="nav-link" id="nav-expenses-tab" data-bs-toggle="tab" href="#nav-received" type="button" role="tab">Received</a>
+            </div>
+            <select id="jobState" class="form-select" style="width: 150px;" onchange="goToStatusPage()">
+                <option value="Filter Status" th:selected="${status.equals(null)}">Filter Status</option>
+                <option value="Pending" th:selected="${status.equals('pending')}">Pending</option>
+                <option value="Accepted" th:selected="${status.equals('accepted')}">Accepted</option>
+                <option value="Rejected" th:selected="${status.equals('rejected')}">Rejected</option>
+            </select>
+        </nav>
+        <div class="tab-content" id="nav-tabContent">
+            <div class="tab-pane fade show active" id="nav-sent" role="tabpanel">
+                <div class="row row-cols-1 row-cols-md-3 g-4 mt-2">
+                    <h4 th:if="${sentQuotes.size() == 0}">No sent quotes.</h4>
+                    <div class="col" th:each="quote : ${sentQuotes}">
+                        <div class="card h-100 shadow-sm">
+                            <div type="button" class="card-body d-flex justify-content-between align-items-center" data-bs-toggle="modal" th:data-bs-target="'#sentQuoteDetails'+${quote.getId()}">
+                                <div class="d-block">
+                                    <h5 class="card-title" th:text="'For: ' + ${quote.getJob().getName()}"></h5>
+                                    <h6 class="card-subtitle mb-2" th:text="'$'+${quote.getPrice()}+' for ' + ${quote.getWorkTime()}+'h'"></h6>
+                                </div>
+                                <div class="d-block">
+                                    <div class="rounded-3 px-3 py-1" th:classappend='${quote.getStatus().toLowerCase()}' th:text="${quote.getStatus()}"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modal fade" th:id="'sentQuoteDetails'+${quote.getId()}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" th:text="'$' + ${quote.getPrice()} + ' for ' + ${quote.getWorkTime()} + 'h'"></h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <h6 th:text="'For: ' + ${quote.getJob().getName()}"></h6>
+                                        <h6 th:text="${quote.getDescription()}"></h6>
+                                        <h6 th:text="'Email: ' + ${quote.getEmail()}"></h6>
+                                        <h6 th:text="'Phone number: ' + ${quote.getPhoneNumber()}"></h6>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="submit" class="btn btn-danger retractBtn" th:data-quoteid="${quote.getId()}" data-bs-dismiss="modal">Retract</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-3" style="position: absolute; bottom: 0; left: 50%; transform: translate(-50%, 20%);" id="sentPagination">
+                    <div th:replace="~{fragments/pagination.html :: page-navigation(
+          @{/my-quotes(status=${status},receivedPage=${receivedPage})},
+          ${sentResults},
+          ${sentPage},
+          ${lastPageSent},
+          'sentPageNumber',
+          'sentPage',
+          'sentPageField',
+          'sentGoButton',
+          'sentPageFieldError')}">
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane fade" id="nav-received" role="tabpanel">
+                <div class="row row-cols-1 row-cols-md-3 g-4 mt-2">
+                    <h4 th:if="${receivedQuotes.size() == 0}">No received quotes.</h4>
+                    <div class="col" th:each="quote : ${receivedQuotes}">
+                        <div class="card h-100 shadow-sm">
+                            <div tabindex="0" type="button" class="card-body d-flex justify-content-between align-items-center" data-bs-toggle="modal" th:data-bs-target="'#receivedQuoteDetails'+${quote.getId()}">
+                                <div class="d-block">
+                                    <h5 class="card-title" th:text="'For: ' + ${quote.getJob().getName()}"></h5>
+                                    <h6 class="card-subtitle mb-2" th:text="'By ' + ${quote.getUser().getFirstName()} + ' ' + ${quote.getUser().getLastName()}"></h6>
+                                    <h6 class="card-subtitle mb-2" th:text="'$'+${quote.getPrice()}+' for ' + ${quote.getWorkTime()}+'h'"></h6>
+                                </div>
+                                <div class="d-block">
+                                    <div class="rounded-3 px-3 py-1" th:classappend='${quote.getStatus().toLowerCase()}' th:text="${quote.getStatus()}"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modal fade" th:id="'receivedQuoteDetails' + ${quote.getId()}" data-bs-keyboard="false" tabindex="-1">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" th:text="'$' + ${quote.getPrice()} + ' for ' + ${quote.getWorkTime()} + 'h'"></h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <h6 th:text="'For: ' + ${quote.getJob().getName()}"></h6>
+                                        <h6 th:text="'By: ' + ${quote.getUser().getFirstName()} + ' ' + ${quote.getUser().getLastName()}"></h6>
+                                        <a th:text="'Go to ' + ${quote.getUser().getFirstName()} + '\'s Profile'"
+                                           th:href="@{/profile(userId=${quote.getUser().getId()})}"></a>
+                                        <h6 th:text="${quote.getDescription()}"></h6>
+                                        <h6 th:if="${quote.getEmail() != null}" th:text="'Email: ' + ${quote.getEmail()}"></h6>
+                                        <h6 th:if="${quote.getPhoneNumber() != null}" th:text="'Phone number: ' + ${quote.getPhoneNumber()}"></h6>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button th:if="${quote.getStatus().toLowerCase() != 'accepted' }" type="button" class="detailsModalAccept btn btn-success" data-bs-dismis="modal" data-bs-toggle="modal" data-bs-target="#confirmAccept" th:data-quote-id="${quote.getId()}">Accept</button>
+                                        <button th:if="${quote.getStatus().toLowerCase() != 'rejected' }" type="submit" class="btn btn-danger" data-bs-dismis="modal" data-bs-toggle="modal" data-bs-target="#rejectQuoteModal" th:data-quote-id="${quote.getId()}">Reject</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3" style="position: absolute; bottom: 0; left: 50%; transform: translate(-50%, 20%);" id="receivedPagination">
+                        <div th:replace="~{fragments/pagination.html :: page-navigation(
+                              @{/my-quotes(status=${status},sentPage=${sentPage})},
+                              ${receivedResults},
+                              ${receivedPage},
+                              ${lastPageReceived},
+                              'receivedPageNumber',
+                              'receivedPage',
+                              'receivedPageField',
+                              'receivedGoButton',
+                              'receivedPageFieldError')}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="retractConfirmation" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Retraction</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to retract this?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-danger" id="retractConfirmationBtn">Yes, Retract</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!--Modal for rejecting quotes-->
+<div class="modal fade" data-bs-keyboard="false" data-bs-backdrop="static" tabindex="-1" id="rejectQuoteModal">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body">
+                Are you sure you want to reject this quote?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelQuoteReject" data-bs-target="#receivedQuoteDetails" data-bs-toggle="modal" data-bs-dismiss="modal">Cancel</button>
+                <form th:action="@{/reject-quote}" method="post">
+                    <input type="hidden" th:name="quoteId" id="confirmQuoteReject">
+                    <button type="submit" class="btn btn-danger" data-bs-dismis="modal">Reject</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<!--Modal for accepting quotes-->
+<div class="modal fade" id="confirmAccept" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body">
+                Are you sure you want to accept this quote?
+            </div>
+            <div class="modal-footer">
+
+                <form class="w-100" th:action="@{/accept-quote}" method="post">
+                    <div class = "d-block">
+                        <input class="form-check-input" type="checkbox" th:name="retract"  id="retractCheck">
+                        <label class="form-check-label" for="retractCheck">
+                            Do you wish to retract the job posting?
+                        </label>
+                    </div>
+                    <div class = "d-block">
+                        <input class="form-check-input" type="checkbox" th:name="transfer"  id="transferCheck">
+                        <label class="form-check-label" for="transferCheck">
+                            Do you wish to transfer this quote to an expense?
+                        </label>
+                    </div>
+                    <div class="d-flex justify-content-end">
+                        <input type="hidden" th:name="quoteId" id="confirmQuoteAccept">
+                        <button type="button" class="btn btn-secondary me-2" id="cancelQuoteAccept" data-bs-target="#receivedQuoteDetails" data-bs-toggle="modal" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success" data-bs-dismis="modal">Accept</button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<form id="retractForm" action="/my-quotes" method="POST" style="display: none;">
+    <input type="hidden" name="quoteId" id="quoteIdField">
+    <input type="hidden" name="status" id="statusField">
+    <input type="hidden" th:name="_csrf" th:value="${_csrf.token}">
+</form>
+
+</body>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        document.addEventListener("show.bs.modal", function (event) {
+            let button = event.relatedTarget;
+            let quoteId = button.getAttribute("data-quote-id");
+            document.getElementById("confirmQuoteAccept").value = quoteId;
+            document.getElementById("cancelQuoteAccept").setAttribute("data-bs-target", "#receivedQuoteDetails"+quoteId);
+        });
+    });
+    document.querySelectorAll('.retractBtn').forEach(button => {
+        button.addEventListener('click', function (e) {
+            const quoteId = e.target.getAttribute('data-quoteid');
+            const quoteModal = document.getElementById('sentQuoteDetails' + quoteId);
+            const quoteModalInstance = bootstrap.Modal.getOrCreateInstance(quoteModal)
+            quoteModalInstance.hide();
+
+            const confirmModalElement = document.getElementById('retractConfirmation');
+            confirmModalElement.setAttribute('data-quoteid', quoteId);
+            const confirmModal = new bootstrap.Modal(confirmModalElement);
+            confirmModal.show();
+        });
+    });
+
+
+    document.getElementById('retractConfirmationBtn').addEventListener('click', function () {
+        const confirmModal = document.getElementById('retractConfirmation');
+        const quoteId = confirmModal.getAttribute('data-quoteid');
+
+        document.getElementById('quoteIdField').value = quoteId;
+        document.getElementById('statusField').value = document.getElementById('jobState').value;
+        document.getElementById('retractForm').submit();
+    });
+
+    document.getElementById()
+
+</script>
+<script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script>
+    document.addEventListener("show.bs.modal", function (event) {
+        let button = event.relatedTarget;
+        let quoteId = button.getAttribute("data-quote-id");
+        document.getElementById("confirmQuoteReject").value = quoteId;
+        document.getElementById("cancelQuoteReject").setAttribute("data-bs-target", "#receivedQuoteDetails"+quoteId);
+    });
+
+</script>
+<script>
+    // Chatgpt helped me write this javascript -Luke
+    function goToStatusPage() {
+        const selectedValue = document.getElementById('jobState').value;
+
+        if (selectedValue === 'Filter Status') {
+            window.location.href = './my-quotes?sentPage=1';
+        } else {
+            const encodedStatus = encodeURIComponent(selectedValue);
+            window.location.href = `./my-quotes?status=${encodedStatus}&sentPage=1`;
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const tabLinks = document.querySelectorAll('a[data-bs-toggle="tab"]');
+        tabLinks.forEach(tab => {
+            tab.addEventListener('shown.bs.tab', function (e) {
+                localStorage.setItem('activeTab', e.target.getAttribute('href'));
+            });
+        });
+
+        const activeTab = localStorage.getItem('activeTab');
+        if (activeTab) {
+            const tabTrigger = document.querySelector(`a[href="${activeTab}"]`);
+            if (tabTrigger) {
+                new bootstrap.Tab(tabTrigger).show();
+            }
+        }
+    });
+
+    function positionPagination() {
+        const lastPageSent = "[[${lastPageSent}]]"
+        const lastPageReceived = "[[${lastPageReceived}]]"
+        let offsetSent;
+        let offsetReceived;
+        if (isTouchDevice()) {
+            offsetSent = 0;
+            offsetReceived = 0;
+            document.getElementById("sentPagination").style.position = `relative`;
+            document.getElementById("receivedPagination").style.position = `relative`;
+        } else {
+            offsetSent = lastPageSent >= 10 ? 40 : 200;
+            offsetReceived = lastPageReceived >= 10 ? 40 : 200;
+            document.getElementById("sentPagination").style.position = `absolute`;
+            document.getElementById("receivedPagination").style.position = `absolute`;
+        }
+        document.getElementById("sentPagination").style.transform = `translate(-50%, -${offsetSent}%)`;
+        document.getElementById("receivedPagination").style.transform = `translate(-50%, -${offsetReceived}%)`;
+    }
+
+    function isTouchDevice() {
+        return (('ontouchstart' in window) ||
+                (navigator.maxTouchPoints > 0) ||
+                (navigator.msMaxTouchPoints > 0)) ||
+            window.innerWidth < 768 ||
+            window.innerHeight < 768;
+    }
+    window.addEventListener('resize', function() {
+        positionPagination();
+    });
+    window.addEventListener('load', function() {
+        positionPagination();
+    });
+</script>
+</html>

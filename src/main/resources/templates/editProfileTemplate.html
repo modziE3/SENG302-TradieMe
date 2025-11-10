@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Edit Profile</title>
+    <link th:href="@{/webjars/bootstrap/css/bootstrap.min.css}" rel="stylesheet"/>
+    <link th:href="@{/css/styles.css}" rel="stylesheet">
+    <link th:href="@{/css/body.css}" rel="stylesheet">
+    <link th:href="@{/css/button.css}" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" th:href="@{./favicon.ico}">
+    <style>
+        #suggestions {
+            border: 1px solid #ccc;
+            max-width: 400px;
+            position: absolute;
+            background: white;
+            z-index: 1;
+        }
+        .suggestion {
+            padding: 5px;
+            cursor: pointer;
+        }
+        .suggestion:hover {
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body class="d-flex justify-content-center align-items-center">
+<div class="container py-4">
+    <div class="rounded card p-4 shadow-sm mx-auto" style="max-width: 500px;">
+        <div class="jumbotron text-center">
+            <h4 class="display-4">Edit Profile</h4>
+            <img th:src="@{${profileImage ?: 'images/DefaultProfileImage.png'}}" alt="Profile Picture"
+                 class="border border-2 avatar-large">
+        </div>
+        <div class="d-flex flex-column flex-md-row justify-content-center">
+            <button type="button" id="modalButton" class="btn btn-secondary m-1" data-bs-toggle="modal" data-bs-target="#uploadImageModal">
+                <i class="bi bi-x-circle"></i>Edit Profile Picture &#10000
+            </button>
+            <a th:href="@{update-password}" class="btn btn-secondary m-1">
+                Change Password &#10000
+            </a>
+        </div>
+        <form th:action="@{edit-profile}" method="post" class="d-block">
+            <input type="hidden" name="actionType" value="updateUser" th:name="actionType">
+            <div class="row">
+                <div class="mb-3 col-md-6">
+                    <input type="hidden" th:name="userId" th:value="*{userId}" />
+                    <label for="firstName" class="form-label">First Name*</label>
+                    <input type="text" class="form-control" id="firstName"
+                           th:name="firstName" th:value="*{firstName}" autofocus>
+                    <div id="firstNameErrorMessage" th:text="${firstNameErrorMessage}" class="invalid-feedback"></div>
+                </div>
+                <div class="mb-3 col-md-6">
+                    <label for="lastName" class="form-label">Last Name</label>
+                    <input type="text" class="form-control" id="lastName"
+                           th:name="lastName" th:value="*{lastName}">
+                    <div id="lastNameErrorMessage" th:text="${lastNameErrorMessage}" class="invalid-feedback"></div>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label for="email" class="form-label">Email*</label>
+                <input type="text" class="form-control" id="email"
+                       th:name="email" th:value="*{email}">
+                <div id="emailErrorMessage" th:text="${emailErrorMessage}" class="invalid-feedback"></div>
+            </div>
+            <div class="row">
+                <div class="mb-3 col-md-6 position-relative">
+                    <div class="d-flex">
+                        <label for="streetAddress" class="form-label">Street Address</label>
+                    </div>
+                    <input type="text" class="form-control" id="streetAddress" autocomplete="off"
+                           th:name="streetAddress" th:value="${streetAddress}">
+                    <div id="suggestions" class="position-absolute"></div>
+                    <div id="streetAddressErrorMessage" th:text="${addressErrorMessage}" class="invalid-feedback"></div>
+                </div>
+                <div class="mb-3 col-md-6">
+                    <div class="d-flex">
+                        <label for="suburb" class="form-label">Suburb</label>
+                        <label style="color: #555555; font-size: 12px; translate: 4px 2px">(optional)</label>
+                    </div>
+                    <input type="text" class="form-control" id="suburb" autocomplete="off"
+                           th:name="suburb" th:value="${suburb}">
+                    <div id="suburbErrorMessage" th:text="${suburbErrorMessage}" class="invalid-feedback"></div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="mb-3 col-md-6">
+                    <div class="d-flex">
+                        <label for="city" class="form-label">City</label>
+                    </div>
+                    <input type="text" class="form-control" id="city" autocomplete="off"
+                           th:name="city" th:value="${city}">
+                    <div id="cityErrorMessage" th:text="${cityErrorMessage}" class="invalid-feedback"></div>
+                </div>
+                <div class="mb-3 col-md-6">
+                    <div class="d-flex">
+                        <label for="country" class="form-label">Country</label>
+                    </div>
+                    <input type="text" class="form-control" id="country" autocomplete="off"
+                           th:name="country" th:value="${country}">
+                    <div id="countryErrorMessage" th:text="${countryErrorMessage}" class="invalid-feedback"></div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="mb-3 col-md-4">
+                    <div class="d-flex">
+                        <label for="postcode" class="form-label">Postcode</label>
+                    </div>
+                    <input type="text" class="form-control" id="postcode" autocomplete="off"
+                           th:name="postcode" th:value="${postcode}">
+                    <div id="postcodeErrorMessage" th:text="${postcodeErrorMessage}" class="invalid-feedback"></div>
+                </div>
+                <div class="mb-3 col-md-4">
+                    <div class="d-flex">
+                        <label for="latitude" class="form-label">Latitude</label>
+                        <label style="color: #555555; font-size: 12px; translate: 4px 2px">(optional)</label>
+                    </div>
+                    <input type="text" class="form-control" id="latitude" autocomplete="off"
+                           th:name="latitude" th:value="${latitude}">
+                    <div id="latitudeErrorMessage" th:text="${postcodeErrorMessage}" class="invalid-feedback"></div>
+                </div>
+                <div class="mb-3 col-md-4">
+                    <div class="d-flex">
+                        <label for="longitude" class="form-label">Longitude</label>
+                        <label style="color: #555555; font-size: 12px; translate: 4px 2px">(optional)</label>
+                    </div>
+                    <input type="text" class="form-control" id="longitude" autocomplete="off"
+                           th:name="longitude" th:value="${longitude}">
+                    <div id="longitudeErrorMessage" th:text="${longitudeErrorMessage}" class="invalid-feedback"></div>
+                </div>
+            </div>
+            <button type="submit" id="submitId" class="btn btn-primary w-100 mt-3">Submit</button>
+        </form>
+        <a class="btn btn-secondary w-100 mt-1" th:href="@{/profile(userId=${userId})}">Cancel</a>
+    </div>
+</div>
+<div class="modal fade" id="uploadImageModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="uploadImageLabel">Upload Profile Image</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="imageForm" th:action="@{update-image}" method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="actionType" value="updatePicture" th:name="actionType">
+                    <input type="hidden" th:name="userId" th:value="*{userId}">
+                    <input type="file" name="file" onchange="submitImageForm()" class="form-control"
+                           th:name="submittedFile" aria-label="file example" id="profileImage" required>
+                    <div id="fileErrorMessage" th:text="${fileErrorMessage}" class="invalid-feedback"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+</body>
+<script>
+    function submitImageForm() {
+        document.getElementById('imageForm').classList.remove("was-validated");
+        const fi = document.getElementById('profileImage');
+
+        if (fi.files.length > 0) {
+            for (let i = 0; i <= fi.files.length - 1; i++) {
+                fsize = fi.files.item(i).size;
+                const file = Math.round((fsize / 1024));
+                if (file >= 10240) {
+                    const errorDiv = document.getElementById('fileErrorMessage');
+                    errorDiv.textContent = "Image must be less than 10MB";
+                    errorDiv.classList.add("d-block");
+                } else {
+                    document.getElementById('imageForm').submit();
+                }
+            }
+        }
+    }
+
+    window.onload = function() {
+        const inputFields = ["firstName", "lastName", "email", "streetAddress", "suburb", "city", "postcode", "country"];
+        inputFields.forEach((inputField) => {
+            if (document.getElementById(inputField + "ErrorMessage").textContent !== "") {
+                document.getElementById(inputField).classList.add("is-invalid");
+            }
+        })
+
+        if (document.getElementById("fileErrorMessage").textContent !== "") {
+            document.getElementById('imageForm').classList.add("was-validated");
+            // JavaScript code for opening the modal provided by ChatGPT
+            const myModal = new bootstrap.Modal(document.getElementById('uploadImageModal'));
+            myModal.show();
+        }
+    }
+
+    const input = document.getElementById('streetAddress');
+    const suggestionsBox = document.getElementById('suggestions');
+    const suburbField = document.getElementById('suburb');
+    const cityField = document.getElementById('city');
+    const postcodeField = document.getElementById('postcode');
+    const countryField = document.getElementById('country');
+    const longitudeField = document.getElementById('longitude');
+    const latitudeField = document.getElementById('latitude');
+    let timeoutId;
+
+    input.addEventListener('input', () => {
+        clearTimeout(timeoutId);
+        const query = input.value.trim();
+
+        if (!query) {
+            suggestionsBox.innerHTML = '';
+            return;
+        }
+
+        timeoutId = setTimeout(async () => {
+            const fullUrl = `./suggest?q=${encodeURIComponent(query)}`;
+            const response = await fetch(fullUrl);
+            const suggestions = await response.json();
+
+            suggestionsBox.innerHTML = '';
+
+            if (suggestions.length === 0) {
+                const div = document.createElement('div');
+                div.className = 'suggestion text-muted';
+                div.textContent = 'No location suggestions are available';
+                suggestionsBox.appendChild(div);
+                return;
+            }
+
+            suggestions.forEach(suggestion => {
+                const [street, suburb, city, postcode, country,  lat, lon, fullAddress] = suggestion;
+
+                const div = document.createElement('div');
+                div.className = 'suggestion';
+                div.textContent = fullAddress;
+
+                div.addEventListener('click', () => {
+                    input.value = street;
+                    suggestionsBox.innerHTML = '';
+
+                    if (suburb) suburbField.value = suburb;
+                    if (city) cityField.value = city;
+                    if (postcode) postcodeField.value = postcode;
+                    if (country) countryField.value = country;
+                    if (lat) latitudeField.value = lat;
+                    if (lon) longitudeField.value = lon;
+                });
+
+                suggestionsBox.appendChild(div);
+            });
+        }, 100);
+    });
+</script>
+</html>

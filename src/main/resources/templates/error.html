@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" context="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Page Not Found</title>
+    <link th:href="@{/webjars/bootstrap/css/bootstrap.min.css}" rel="stylesheet"/>
+    <link th:href="@{/css/styles.css}" rel="stylesheet">
+    <link th:href="@{/css/body.css}" rel="stylesheet">
+    <link th:href="@{/css/button.css}" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" th:href="@{./favicon.ico}">
+  </head>
+  <body>
+    <div th:replace="~{fragments/header :: header}"></div>
+    <div class="rounded container" style="width: fit-content">
+      <div class="mt-xxl-3 header-container d-flex justify-content-center">
+        <h1 class="display-3">Page Not Found</h1>
+      </div>
+      <p class="d-flex justify-content-center">Sorry, this page either does not exist or has since been removed</p>
+    </div>
+    <!--Script tag provided by ChatGPT-->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+  </body>
+</html>

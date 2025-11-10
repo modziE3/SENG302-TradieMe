@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+
+<!--ALL OF THIS WAS MADE WITH HELP OF CHAtGPT. THIS IS ONLY EXAMPLE FOR A SPIKE-->
+
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Search with Autocomplete</title>
+    <meta charset="UTF-8">
+    <style>
+        #suggestions {
+            border: 1px solid #ccc;
+            max-width: 200px;
+            position: absolute;
+            background: white;
+        }
+        .suggestion {
+            padding: 5px;
+            cursor: pointer;
+        }
+        .suggestion:hover {
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+<h1>Search</h1>
+<input type="text" id="searchInput" placeholder="Type something..." autocomplete="off">
+<div id="suggestions"></div>
+
+<script>
+    const input = document.getElementById('searchInput');
+    const suggestionsBox = document.getElementById('suggestions');
+    let lastSuggestions = [];
+
+    // Poll every 500ms
+    setInterval(async () => {
+        const query = input.value.trim();
+
+        if (!query) {
+            suggestionsBox.innerHTML = '';
+            return;
+        }
+
+        const fullUrl = `suggest?q=${encodeURIComponent(query)}`;
+        const response = await fetch(fullUrl);
+        const suggestions = await response.json();
+
+        // Only update if suggestions changed
+        if (JSON.stringify(suggestions) !== JSON.stringify(lastSuggestions)) {
+            lastSuggestions = suggestions;
+            suggestionsBox.innerHTML = '';
+            suggestions.forEach(s => {return "locationAutocompleteFormSpike";
+                const div = document.createElement('div');
+                div.className = 'suggestion';
+                div.textContent = s;
+                div.addEventListener('click', () => {
+                    input.value = s;
+                    suggestionsBox.innerHTML = '';
+                });
+                suggestionsBox.appendChild(div);
+            });
+        }
+    }, 50); // Poll every 500ms
+</script>
+</body>
+</html>

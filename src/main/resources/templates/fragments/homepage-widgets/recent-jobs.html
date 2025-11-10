@@ -1,0 +1,105 @@
+<div th:fragment="recentjobs">
+  <style>
+    .job-listing-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      padding: 0 40px;
+    }
+    .job-listing-list1 {
+      display: flex;
+      gap: 1rem;
+      overflow-x: auto;
+      scroll-behavior: smooth;
+      padding: 1rem 0;
+      margin: 0;
+      list-style: none;
+      flex-grow: 1;
+    }
+    .scroll-button {
+      background: transparent;
+      border: none;
+      color: #333;
+      width: 48px;
+      height: 80px;
+      font-size: 2.5rem;
+      font-weight: bold;
+      cursor: pointer;
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.7;
+      transition: opacity 0.2s ease;
+      user-select: none;
+    }
+    .scroll-button:hover {
+      opacity: 1;
+    }
+    .scroll-button.left {
+      left: 0;
+    }
+    .scroll-button.right {
+      right: 0;
+    }
+    .notstartedrecent {
+      width: 100px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  </style>
+  <div class="rounded" style="overflow: hidden; padding-bottom: 5px">
+    <h2 th:text="${recentJobs.size()} != 0 ? 'Recently Viewed Jobs' : 'No Recently Viewed Jobs'"></h2>
+    <div class="job-listing-wrapper" style="padding: 0px 15px; translate: 0 -10px">
+      <button th:if="${recentJobs.size() != 0}" class="scroll-button left" style="translate: -25px" aria-label="Scroll Left">&lt;</button>
+      <ul th:if="${recentJobs.size() != 0}" class="job-listing-list1 small-scroll-bar-list">
+        <li th:each="job : ${recentJobs}" class="job-container-card">
+          <a th:href="@{/my-renovations/job-details(jobId=${job.getJobId()},fromSearch=true)}" style="text-decoration: none; color: black">
+            <div class="d-flex">
+              <div style="padding-left:5px">
+                <div class="btn icon-picker-btn no-icon job-icon-btn disabled"  th:data-job-id="${job.getJobId()}">
+                  <img class="job-icon"
+                       th:src="@{'/icons/' + ${job.getJobIcon() ?: 'plus-solid'} + '.svg'}"
+                       alt="icon"
+                       th:data-job-id="${job.getJobId()}"
+                       th:style="${job.getJobIcon() != null} ? 'width:40px; height:40px; border:none; outline:none;' : 'width:24px; height:24px; border:none; outline:none;'"/>
+                </div>
+              </div>
+              <div class="d-block" style="padding-left:15px">
+                <p class="job-title cut-text" th:text="${job.getTitle()}"></p>
+                <p class="notstartedrecent rounded-5 p-2" style="translate: 0 5px" th:text="${job.getJobState()}" th:classappend='${job.getJobState().replaceAll(" ", "").toLowerCase()}'></p>
+                <p class="job-small-text cut-text" th:text="'Owned by: ' + ${job.getUserFullName()}"></p>
+                <p class="job-small-text cut-text" th:text="'Starts: ' + ${job.getStartDate()}"></p>
+                <p class="job-small-text cut-text" th:text="'Ends: ' + ${job.getEndDate()}"></p>
+              </div>
+            </div>
+          </a>
+        </li>
+      </ul>
+      <button th:if="${recentJobs.size() != 0}" class="scroll-button right" style="translate: 25px" aria-label="Scroll Right">&gt;</button>
+    </div>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const wrapper = document.querySelector('.job-listing-list1');
+      const scrollLeftBtn = document.querySelector('.scroll-button.left');
+      const scrollRightBtn = document.querySelector('.scroll-button.right');
+
+      scrollLeftBtn.addEventListener('click', () => {
+        wrapper.scrollBy({ left: -300, behavior: 'smooth' });
+      });
+
+      scrollRightBtn.addEventListener('click', () => {
+        wrapper.scrollBy({ left: 300, behavior: 'smooth' });
+      });
+    });
+  </script>
+</div>

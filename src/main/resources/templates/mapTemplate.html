@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Map</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link th:href="@{/webjars/bootstrap/css/bootstrap.min.css}" rel="stylesheet"/>
+    <link th:href="@{/css/styles.css}" rel="stylesheet">
+    <link th:href="@{/css/body.css}" rel="stylesheet">
+    <link rel="stylesheet" href="./css/leaflet.css" />
+    <link rel="stylesheet" href="./css/leaflet-routing-machine.css" />
+    <link rel="icon" type="image/x-icon" th:href="@{./favicon.ico}">
+    <style>
+        .leaflet-map-pane {
+            z-index: 0 !important;
+        }
+        .leaflet-pane {
+            z-index: 0 !important;
+        }
+        .leaflet-top, .leaflet-left {
+            bottom: 0;
+            top: 75vh;
+        }
+        .leaflet-container {
+            margin-top: -3vh;
+        }
+        img {
+            border: 0;
+            border-radius: 0;
+        }
+        html, body { height: 100%; margin: 0; padding: 0; overflow-y: hidden}
+        #map { height: 100%; width: 100%;}
+        #controls {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            background: rgba(240, 240, 240, 0.9);
+            padding: 8px 12px;
+            border-radius: 6px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+<div th:replace="~{fragments/header :: header}"></div>
+
+
+<div class="rounded d-flex" style="left: 1vw; z-index: 1; position: absolute; padding: 10px 10px">
+    <a th:href="@{profile(userId=${userId})}" class="btn btn-secondary mb-2" style="padding-left: 10px">Back</a>
+    <div style="padding-right: 10px; translate: 5px 5px" th:insert="~{fragments/breadCrumb :: bread-crumb-nav()}"></div>
+</div>
+<div id="jobModals">
+</div>
+
+<div id="map"></div>
+
+<script src="./js/leaflet.js"></script>
+<script src="./js/leaflet-routing-machine.js"></script>
+
+<script th:inline="javascript">
+    const csrfToken = /*[[${_csrf.token}]]*/ '';
+    const csrfHeader = /*[[${_csrf.headerName}]]*/ '';
+</script>
+
+<script>
+    let mapTemplate;
+    let markers = []; // stores [marker, set[jobIds]]
+    let jobNameMap = {}; // dictionary {jobId: jobName}
+
+    function initMap() {
+        mapTemplate = new L.map('map', {
+            center: [-43.53112103134325, 172.6204661950861],
+            zoom: 11
+        });
+
+        new L.TileLayer('https://tile.csse.canterbury.ac.nz/hot/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors<br>Served by University of Canterbury'
+        }).addTo(mapTemplate);
+    }
+
+    initMap();
+    addTradieMarkers(`[[${userId}]]`);
+
+
+    /**
+     * given the tradies id, we can fetch their completed jobs. after doing so we can mark each jobs location on the map.
+     * @param id tradie id used to fetch completed jobs.
+     */
+    function addTradieMarkers(id) {
+        fetch(`./profile/map/jobs?userId=${id}`)
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                return response.json();
+            })
+            .then(data => {
+                data.forEach(dtoMapMarker => {
+                    addMarker(dtoMapMarker.name, dtoMapMarker.pos.lat, dtoMapMarker.pos.lng, dtoMapMarker.jobId);
+
+                    if (!document.getElementById(`jobModal-${dtoMapMarker.jobId}`)) {
+                        createJobModal(dtoMapMarker.jobId, dtoMapMarker.name);
+                        jobNameMap[dtoMapMarker.jobId] = dtoMapMarker.name;
+                    }
+                });
+            })
+            .catch(console.error);
+    }
+
+    /**
+     * Adds markers to the map, if there are existing markers they are combined into one with a job selector.
+     * @param title title of job being marked
+     * @param lat latitude of jobs location
+     * @param lng longitude of jobs location
+     * @param jobId repo id of job.
+     */
+    function addMarker(title, lat, lng, jobId) {
+        let existingTuple = markers.find(([marker]) => {
+            let pos = marker.getLatLng();
+            return pos.lat === lat && pos.lng === lng;
+        });
+        if (existingTuple) {
+            let [_, jobIds] = existingTuple;
+            jobIds.add(jobId);
+        } else {
+            let marker = L.marker([lat, lng]);
+            let jobIds = new Set([jobId]);
+
+            marker.on('click', () => {
+                let ex = markers.find(([m]) => marker === m);
+                let [_, js] = ex;
+                const jobArray = Array.isArray(js) ? js : [...js];
+
+                if (jobArray.length === 1) {
+                    const modalEl = document.getElementById(`jobDetailsModal${jobArray[0]}`);
+                    const modal = new bootstrap.Modal(modalEl);
+                    modal.show();
+                } else {
+                    marker.unbindPopup();
+                    const container = document.createElement("div");
+                    const heading = document.createElement("strong");
+                    heading.textContent = "Select a job:";
+                    container.appendChild(heading);
+                    container.appendChild(document.createElement("br"));
+
+                    jobArray.forEach(jobId => {
+                        const btn = document.createElement("a");
+                        btn.style.color = "white";
+                        btn.className = "btn btn-primary btn-sm mt-1 d-block";
+                        btn.setAttribute("data-bs-toggle", "modal");
+                        btn.setAttribute("data-bs-target", `#jobDetailsModal${jobId}`);
+                        btn.textContent = jobNameMap[jobId];
+
+                        container.appendChild(btn);
+                        container.appendChild(document.createElement("br"));
+                    });
+
+                    marker.bindPopup(container).openPopup();
+                }
+            });
+
+            marker.addTo(mapTemplate);
+            markers.push([marker, jobIds]);
+        }
+    }
+
+    /**
+     * creates a modal for a job. When you click a marked job this modal will appear.
+     * @param jobId repo id of the marked job
+     * @param jobName name of the marked job.
+     */
+    function createJobModal(jobId, jobName) {
+        fetch(`./my-renovations/job-details/compare-tradies/get-job-modal-fragment?jobId=${jobId}`)
+            .then(r => r.text())
+            .then(html => {
+                const jobModalsContainer = document.getElementById("jobModals");
+                jobModalsContainer.insertAdjacentHTML("beforeend", html);
+            });
+    }
+</script>
+<script>
+    const carousels = document.querySelectorAll('.carousel');
+    carousels.forEach(carousel => {
+        const prevBtn = carousel.querySelector('.carousel-control-prev');
+        const nextBtn = carousel.querySelector('.carousel-control-next');
+
+        function updateArrows() {
+            const items = carousel.querySelectorAll('.carousel-item');
+            const activeIndex = [...items].findIndex(item => item.classList.contains('active'));
+
+            if (activeIndex === 0) {
+                prevBtn.style.display = 'none';
+            } else {
+                prevBtn.style.display = 'block';
+            }
+
+            if (activeIndex === items.length - 1) {
+                nextBtn.style.display = 'none';
+            } else {
+                nextBtn.style.display = 'block';
+            }
+        }
+
+        updateArrows();
+
+        carousel.addEventListener('slid.bs.carousel', updateArrows);
+    });
+</script>
+</body>
+</html>

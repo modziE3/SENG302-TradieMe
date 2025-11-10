@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Home</title>
+    <link th:href="@{/webjars/bootstrap/css/bootstrap.min.css}" rel="stylesheet"/>
+    <link th:href="@{/css/styles.css}" rel="stylesheet">
+    <link th:href="@{/css/button.css}" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" th:href="@{./favicon.ico}">
+    <style>
+        .rounded {
+            background-color: #f0f0f0;
+            border-radius: 5px;
+            border: 1px solid #939393;
+            padding: 20px;
+            margin: 20px auto;
+            box-shadow: 6px 6px 6px rgba(0, 0, 0, 0.175)
+        }
+        .job-listing-card {
+            max-width: 400px;
+        }
+        .job-listing-list {
+            gap:0px;
+        }
+    </style>
+</head>
+<body>
+<div th:replace="~{fragments/header :: header}"></div>
+
+<!-- Page Content -->
+<div class="container mt-2">
+    <div th:replace="~{fragments/breadCrumb :: bread-crumb-nav()}"></div>
+    <div class="d-flex justify-content-center">
+        <div class="btn-group-vertical w-50">
+            <a th:if="${loggedIn == false}" th:href="@{login}" class="btn btn-primary mb-2" id="signInButton">Sign In</a>
+            <a th:if="${loggedIn == false}" th:href="@{registration-form}" class="btn btn-secondary mb-2">Register</a>
+        </div>
+    </div>
+    <div th:if="${loggedIn == true}">
+        <div class="rounded container" style="width: fit-content">
+            <h1 class="display-5 text-center">Welcome to TradieMe</h1>
+        </div>
+        <a class="btn btn-secondary" th:href="@{/customise-widgets}">Customise Widgets ✐</a>
+        <div th:each="widget : ${homePageWidgetOrder}">
+            <div th:if="${widget.equals('Recently Viewed Jobs')}">
+                <div th:replace="~{fragments/homepage-widgets/recent-jobs :: recentjobs}"></div>
+            </div>
+            <div th:if="${widget.equals('Job Recommendations')}">
+                <div th:replace="~{fragments/homepage-widgets/job-recommendations :: jobRecommendations}"></div>
+            </div>
+            <div th:if="${widget.equals('Job Calendar')}">
+                <div class="rounded flex-grow-1" >
+                    <h3>Job Calendar</h3>
+                    <div th:replace="~{fragments/calendar :: calendar}"></div>
+                </div>
+            </div>
+            <div th:if="${widget.equals('Recently Viewed Renovations')}">
+                <div th:replace="~{fragments/homepage-widgets/recent-renovations :: recentRenovations}"></div>
+            </div>
+            <div th:if="${widget.equals('Hottest Tradies Leaderboard')}">
+                <div th:replace="~{fragments/homepage-widgets/hottest-tradies-leaderboard :: hottestTradies}"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+</body>
+</html>

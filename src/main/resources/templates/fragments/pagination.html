@@ -1,0 +1,95 @@
+<!-- fragments.html -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<body>
+
+<!-- Fragment: page-navigation -->
+<div th:fragment="page-navigation(baseUrl, currentPages, currentPage, finalPage, pageNumberName, pageVariableName, thisPageFieldName, goButtonName, thisPageNumberErrorMessageName)">
+    <div class="d-flex container justify-content-center">
+
+        <div class="d-block">
+
+            <!-- Pagination Controls -->
+            <div th:if="${currentPages.size() > 1}">
+                <div class="d-flex flex-column flex-md-row justify-content-center">
+
+                    <!-- First & Prev -->
+                    <ul class="pagination mb-1 d-flex justify-content-center">
+                        <li class="page-item" th:classappend="${currentPage == 1} ? 'disabled'">
+                            <a class="page-link"
+                               th:href="${baseUrl} + ${baseUrl.contains('?') ? '&' : '?'} + ${pageVariableName+'=1'}">First</a>
+                        </li>
+                        <li class="page-item" th:classappend="${currentPage == 1} ? 'disabled'">
+                            <a class="page-link"
+                               th:href="${baseUrl} + ${baseUrl.contains('?') ? '&' : '?'} + ${pageVariableName+'='+(currentPage - 1)}">Prev</a>
+                        </li>
+                    </ul>
+
+                    <!-- Numbered Pages -->
+                    <ul class="pagination mb-1 d-flex justify-content-center">
+                        <li class="page-item"
+                            th:each="page : ${currentPages}"
+                            th:if="${currentPage -2 == page || currentPage -1 == page || currentPage == page || currentPage +1 == page || currentPage +2 == page}"
+                            th:classappend="${page == currentPage} ? ' active'">
+                            <a class="page-link"
+                               th:text="${page}"
+                               th:href="${baseUrl} + ${baseUrl.contains('?') ? '&' : '?'} + ${pageVariableName+'='+page}"></a>
+                        </li>
+                    </ul>
+
+                    <!-- Next & Last -->
+                    <ul class="pagination d-flex justify-content-center">
+                        <li class="page-item" th:classappend="${currentPage == finalPage} ? 'disabled'">
+                            <a class="page-link"
+                               th:href="${baseUrl} + ${baseUrl.contains('?') ? '&' : '?'} + ${pageVariableName+'='+(currentPage + 1)}">Next</a>
+                        </li>
+                        <li class="page-item" th:classappend="${currentPage == finalPage} ? 'disabled'">
+                            <a class="page-link"
+                               th:href="${baseUrl} + ${baseUrl.contains('?') ? '&' : '?'} + ${pageVariableName+'='+finalPage}">Last</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Page Number Input Form -->
+            <div th:if="${currentPages.size() > 1 && currentPages.get(currentPages.size() - 1) > 10}" class="ms-2 mb-3 d-flex justify-content-center">
+                <form th:action="${baseUrl}" method="post">
+                    <div class="input-group">
+                        <input type="text"
+                               class="form-control w-25"
+                               placeholder="Enter page number"
+                               autocomplete="off"
+                               th:name="${pageNumberName}"
+                               th:id="${thisPageFieldName}">
+                        <button th:id="${goButtonName}" class="btn btn-primary" type="submit">Go</button>
+                    </div>
+                    <p th:id="${thisPageNumberErrorMessageName}"
+                         class="invalid-feedback d-block">
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script>
+        if (document.getElementById("[[${goButtonName}]]") !== null) {
+            document.getElementById("[[${goButtonName}]]").addEventListener("click", function(event) {
+                const pageNumberInput = document.getElementById("[[${thisPageFieldName}]]");
+                const pageNumberStr = pageNumberInput.value.trim();
+                const pageNumber = parseInt(pageNumberStr, 10);
+
+                if (pageNumberStr === "" || isNaN(pageNumber) || pageNumberStr.includes(".")) {
+                    event.preventDefault();
+                    document.getElementById("[[${thisPageNumberErrorMessageName}]]").textContent = "Please enter a whole number";
+                    pageNumberInput.classList.add("is-invalid");
+                } else if (pageNumber < 1 || pageNumber > "[[${finalPage}]]") {
+                    event.preventDefault();
+                    document.getElementById("[[${thisPageNumberErrorMessageName}]]").textContent =
+                        "The page number is outside the range of available pages";
+                    pageNumberInput.classList.add("is-invalid");
+                }
+            });
+        }
+    </script>
+</div>
+</body>
+</html>

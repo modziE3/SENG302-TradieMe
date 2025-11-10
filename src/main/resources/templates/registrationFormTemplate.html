@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Sign Up</title>
+        <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+        <link th:href="@{/css/styles.css}" rel="stylesheet">
+        <link th:href="@{/css/body.css}" rel="stylesheet">
+        <link th:href="@{/css/button.css}" rel="stylesheet">
+        <link rel="icon" type="image/x-icon" th:href="@{./favicon.ico}">
+        <style>
+            #suggestions {
+                border: 1px solid #ccc;
+                max-width: 400px;
+                position: absolute;
+                background: white;
+                z-index: 1;
+            }
+            .suggestion {
+                padding: 5px;
+                cursor: pointer;
+            }
+            .suggestion:hover {
+                background-color: #f0f0f0;
+            }
+        </style>
+    </head>
+    <body class="d-flex justify-content-center align-items-center">
+        <div class="container py-4">
+            <div class="rounded card p-4 shadow-sm mx-auto" style="max-width: 500px;">
+                <div class="text-center mb-4">
+                    <h4 class="display-4">Sign Up</h4>
+                </div>
+                <form th:action="@{registration-form}" method="post">
+                    <div class="row">
+                        <div class="mb-3 col-md-6">
+                            <label for="firstName" class="form-label">First Name*</label>
+                            <input type="text" class="form-control " id="firstName" autocomplete="off"
+                                   th:name="firstName" th:value="${firstName}">
+                            <div id="firstNameErrorMessage" th:text="${firstNameErrorMessage}" class="invalid-feedback"></div>
+                        </div>
+                        <div class="mb-3 col-md-6">
+                            <label for="lastName" class="form-label">Last Name</label>
+                            <input type="text" class="form-control " id="lastName" autocomplete="off"
+                                   th:name="lastName" th:value="${lastName}">
+                            <div id="lastNameErrorMessage" th:text="${lastNameErrorMessage}" class="invalid-feedback"></div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email*</label>
+                        <input type="text" class="form-control " id="email" autocomplete="off"
+                               th:name="email" th:value="${email}">
+                        <div id="emailErrorMessage" th:text="${emailErrorMessage}" class="invalid-feedback"></div>
+                    </div>
+
+                    <div class="row">
+                        <div class="mb-3 col-md-6">
+                            <label for="password" class="form-label">Password*</label>
+                            <input type="password" class="form-control " id="password" autocomplete="off"
+                                   th:name="password" th:value="${password}">
+                            <div id="passwordErrorMessage" th:text="${passwordErrorMessage}" class="invalid-feedback"></div>
+                        </div>
+                        <div class="mb-3 col-md-6">
+                            <label for="secondPassword" class="form-label">Re-enter Password*</label>
+                            <input type="password" class="form-control " id="secondPassword" autocomplete="off"
+                                   th:name="secondPassword" th:value="${secondPassword}">
+                            <div id="secondPasswordErrorMessage" th:text="${secondPasswordErrorMessage}" class="invalid-feedback"></div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="mb-3 col-md-6 position-relative">
+                            <div class="d-flex">
+                                <label for="streetAddress" class="form-label">Street Address</label>
+                            </div>
+                            <input type="text" class="form-control" id="streetAddress" autocomplete="off"
+                                   th:name="streetAddress" th:value="${streetAddress}">
+                            <div id="suggestions" class="position-absolute"></div>
+                            <div id="streetAddressErrorMessage" th:text="${addressErrorMessage}" class="invalid-feedback"></div>
+                        </div>
+                        <div class="mb-3 col-md-6">
+                            <div class="d-flex">
+                                <label for="suburb" class="form-label">Suburb</label>
+                                <label style="color: #555555; font-size: 12px; translate: 4px 2px">(optional)</label>
+                            </div>
+                            <input type="text" class="form-control" id="suburb" autocomplete="off"
+                                   th:name="suburb" th:value="${suburb}">
+                            <div id="suburbErrorMessage" th:text="${suburbErrorMessage}" class="invalid-feedback"></div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="mb-3 col-md-6">
+                            <div class="d-flex">
+                                <label for="city" class="form-label">City</label>
+                            </div>
+                            <input type="text" class="form-control" id="city" autocomplete="off"
+                                   th:name="city" th:value="${city}">
+                            <div id="cityErrorMessage" th:text="${cityErrorMessage}" class="invalid-feedback"></div>
+                        </div>
+                        <div class="mb-3 col-md-6">
+                            <div class="d-flex">
+                                <label for="country" class="form-label">Country</label>
+                            </div>
+                            <input type="text" class="form-control" id="country" autocomplete="off"
+                                   th:name="country" th:value="${country}">
+                            <div id="countryErrorMessage" th:text="${countryErrorMessage}" class="invalid-feedback"></div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="mb-3 col-md-4">
+                            <div class="d-flex">
+                                <label for="postcode" class="form-label">Postcode</label>
+                            </div>
+                            <input type="text" class="form-control" id="postcode" autocomplete="off"
+                                   th:name="postcode" th:value="${postcode}">
+                            <div id="postcodeErrorMessage" th:text="${postcodeErrorMessage}" class="invalid-feedback"></div>
+                        </div>
+                        <div class="mb-3 col-md-4">
+                            <div class="d-flex">
+                                <label for="latitude" class="form-label">Latitude</label>
+                                <label style="color: #555555; font-size: 12px; translate: 4px 2px">(optional)</label>
+                            </div>
+                            <input type="text" class="form-control" id="latitude" autocomplete="off"
+                                   th:name="latitude" th:value="${latitude}">
+                            <div id="latitudeErrorMessage" th:text="${postcodeErrorMessage}" class="invalid-feedback"></div>
+                        </div>
+                        <div class="mb-3 col-md-4">
+                            <div class="d-flex">
+                                <label for="longitude" class="form-label">Longitude</label>
+                                <label style="color: #555555; font-size: 12px; translate: 4px 2px">(optional)</label>
+                            </div>
+                            <input type="text" class="form-control" id="longitude" autocomplete="off"
+                                   th:name="longitude" th:value="${longitude}">
+                            <div id="longitudeErrorMessage" th:text="${longitudeErrorMessage}" class="invalid-feedback"></div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 mt-3">Sign Up</button>
+                </form>
+                <div class="d-flex flex-column text-center mt-1">
+                    <a th:href="@{/login}" role="button">Already have an account? Login</a>
+                </div>
+            </div>
+        </div>
+        <script>
+            window.onload = function() {
+                const inputFields = ["firstName", "lastName", "email", "password", "secondPassword", "streetAddress", "suburb", "city", "postcode", "country"];
+                inputFields.forEach((inputField) => {
+                    if (document.getElementById(inputField + "ErrorMessage").textContent !== "") {
+                        document.getElementById(inputField).classList.add("is-invalid");
+                    }
+                })
+            };
+
+            const input = document.getElementById('streetAddress');
+            const suggestionsBox = document.getElementById('suggestions');
+            const suburbField = document.getElementById('suburb');
+            const cityField = document.getElementById('city');
+            const postcodeField = document.getElementById('postcode');
+            const countryField = document.getElementById('country');
+            const longitudeField = document.getElementById('longitude');
+            const latitudeField = document.getElementById('latitude');
+            let timeoutId;
+
+            input.addEventListener('input', () => {
+                clearTimeout(timeoutId);
+                const query = input.value.trim();
+
+                if (!query) {
+                    suggestionsBox.innerHTML = '';
+                    return;
+                }
+
+                timeoutId = setTimeout(async () => {
+                    const fullUrl = `./suggest?q=${encodeURIComponent(query)}`;
+                    const response = await fetch(fullUrl);
+                    const suggestions = await response.json();
+
+                    suggestionsBox.innerHTML = '';
+
+                    if (suggestions.length === 0) {
+                        const div = document.createElement('div');
+                        div.className = 'suggestion text-muted';
+                        div.textContent = 'No location suggestions are available';
+                        suggestionsBox.appendChild(div);
+                        return;
+                    }
+
+                    suggestions.forEach(suggestion => {
+                        const [street, suburb, city, postcode, country,  lat, lon, fullAddress] = suggestion;
+
+                        const div = document.createElement('div');
+                        div.className = 'suggestion';
+                        div.textContent = fullAddress;
+
+                        div.addEventListener('click', () => {
+                            input.value = street;
+                            suggestionsBox.innerHTML = '';
+
+                            if (suburb) suburbField.value = suburb;
+                            if (city) cityField.value = city;
+                            if (postcode) postcodeField.value = postcode;
+                            if (country) countryField.value = country;
+                            if (lat) latitudeField.value = lat;
+                            if (lon) longitudeField.value = lon;
+                        });
+
+                        suggestionsBox.appendChild(div);
+                    });
+                }, 100);
+            });
+        </script>
+    </body>
+</html>

@@ -1,0 +1,182 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${mode == 'edit' ? 'Edit Job' : 'Add Job'}"></title>
+    <link th:href="@{/webjars/bootstrap/css/bootstrap.min.css}" rel="stylesheet"/>
+    <link th:href="@{/css/body.css}" rel="stylesheet">
+    <link th:href="@{/css/button.css}" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" th:href="@{./favicon.ico}">
+</head>
+<body class="d-flex justify-content-center align-items-center">
+<div class="container py-4">
+    <div class="rounded card p-4 shadow-sm mx-auto" style="max-width: 500px;">
+        <div class="jumbotron text-center">
+            <h4 class="display-4" th:text="${mode == 'edit' ? 'Edit Job' : 'Add Job'}"></h4>
+        </div>
+        <i th:class="${jobIcon}" style="font-size: 48px; display: block; margin: auto"></i>
+        <form th:action="@{${mode == 'edit' ? '/my-renovations/edit-job?recordId='+record.getId()+'&jobId='+job.getId()+'&fromCalendar='+fromCalendar+'&fromJob='+fromJob
+              : '/my-renovations/create-job?recordId='+record.getId()+'&fromCalendar='+fromCalendar+'&fromJob='+fromJob} +
+              ${fromCalendar ? '#nav-calendar' : '#nav-jobs'}}"
+              method="post" id="jobForm">
+            <div class="mb-3">
+                <label for="newJobName" class="form-label">Name</label>
+                <input type="text" class="form-control" id="newJobName" autocomplete="off"
+                       th:name="newJobName" th:value="${newJobName}">
+                <div id="newJobNameErrorMessage" th:text="${newJobNameErrorMessage}" class="invalid-feedback"></div>
+            </div>
+            <div>
+                <label for="jobDescription" class="form-label">Description</label>
+                <textarea class="form-control" id="jobDescription"  autocomplete="off"
+                          th:name="jobDescription"
+                          th:text="${jobDescription}"></textarea>
+                <div id="jobDescriptionErrorMessage"
+                     th:text="${jobDescriptionErrorMessage}"
+                     class="invalid-feedback"></div>
+            </div>
+            <div id="descriptionHelpBlock" class="form-text mb-3" th:text="${descriptionLength}">
+                0/512
+            </div>
+            <div class="mb-3">
+                <label for="jobType" class="form-label">Job Type</label>
+                <select class="form-select" id="jobType" th:name="jobType">
+                    <option th:value="'No Type'" selected>No Type</option>
+                    <option th:value="Carpentry">Carpentry</option>
+                    <option th:value="Electrical">Electrical</option>
+                    <option th:value="Plumbing">Plumbing</option>
+                    <option th:value="Insulating">Insulating</option>
+                    <option th:value="Plastering">Plastering</option>
+                    <option th:value="Painting">Painting</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="jobStartDate" class="form-label">Start Date</label>
+                <input type="text" class="form-control" id="jobStartDate" placeholder="DD/MM/YYYY" autocomplete="off"
+                       th:name="jobStartDate" th:value="${jobStartDate}">
+                <div id="jobStartDateErrorMessage" th:text="${jobStartDateErrorMessage}" class="invalid-feedback"></div>
+            </div>
+            <div class="mb-3">
+                <label for="jobDueDate" class="form-label">Due Date</label>
+                <input type="text" class="form-control" id="jobDueDate" placeholder="DD/MM/YYYY" autocomplete="off"
+                       th:name="jobDueDate" th:value="${jobDueDate}">
+                <div id="jobDueDateErrorMessage" th:text="${jobDueDateErrorMessage}" class="invalid-feedback"></div>
+            </div>
+            <div th:if="${renoRooms != '[]'}">
+                <div class="text-center">
+                    <h5 class="display-5">Select Rooms</h5>
+                </div>
+                <ul id="displayRoomList" class="list-group"></ul>
+                <input type="hidden" th:name="rooms" id="hiddenRoomsList">
+                <ul hidden="hidden" id="selectedRoomList" class="list-group"></ul>
+                <input type="hidden" th:name="selectedRooms" id="hiddenSelectedRoomsList">
+            </div>
+            <div class="mt-3">
+                <button id="createJobBtn" type="submit" formnovalidate class="btn btn-primary w-100 mt-3"
+                        th:text="${mode == 'edit' ? 'Submit' : 'Create'}"></button>
+                <a th:if="${fromJob == true}" th:href="@{/my-renovations/job-details(jobId=${job.getId()})}"
+                   class="btn btn-secondary w-100 mt-1">Cancel</a>
+                <a th:if="${fromJob != true && fromWidget == true}" th:href="@{/home}"
+                   class="btn btn-secondary w-100 mt-1">Cancel</a>
+                <a th:if="${fromJob != true && fromWidget != true}" th:href="@{/my-renovations/details(recordId=${record.getId()})} + ${fromCalendar == true ? '#nav-calendar' : '#nav-jobs'}"
+                   class="btn btn-secondary w-100 mt-1">Cancel</a>
+            </div>
+            <input type="hidden" th:name="search" th:value="${search}">
+            <input type="hidden" th:name="fromJob" th:value="${fromJob}">
+        </form>
+    </div>
+</div>
+<script>
+    window.onload = function() {
+        const inputFields = ["newJobName", "jobDescription", "jobDueDate", "jobStartDate"];
+        inputFields.forEach((inputField) => {
+            if (document.getElementById(inputField + "ErrorMessage").textContent !== "") {
+                document.getElementById(inputField).classList.add("is-invalid");
+            }
+        })
+
+        const type = `[[${jobType}]]`;
+        document.querySelectorAll("option").forEach(option => {
+            option.selected = (option.value === type);
+        })
+
+        prepopulateDisplayRoomsList();
+    };
+
+
+    function prepopulateDisplayRoomsList() {
+        let rooms = "[[${renoRooms}]]";
+        if (rooms !== "[]") {
+            rooms = rooms.slice(1, -1).split('`')
+            for (let room of rooms) {
+                addDisplayRoom(room);
+            }
+        }
+    }
+
+
+    function addDisplayRoom(roomName) {
+        let jobRooms = "[[${jobRooms}]]"
+        const roomList = document.getElementById("displayRoomList");
+        const roomItem = document.createElement("li");
+        const selectedRoomList = document.getElementById("selectedRoomList");
+        const selectedRoomItem = document.createElement("li");
+        roomItem.textContent = roomName;
+        roomItem.className = "list-group-item d-flex justify-content-between align-item-center";
+        selectedRoomItem.textContent = roomName;
+        const selectButton = document.createElement("button");
+        selectButton.type = "button";
+        if (jobRooms.includes(roomName)) {
+            selectedRoomList.appendChild(selectedRoomItem);
+            updateHiddenSelectedRoomList();
+            selectButton.textContent = "Remove";
+            selectButton.className = "btn btn-danger btn-sm ";
+        } else {
+            selectButton.textContent = "Select";
+            selectButton.className = "btn btn-primary btn-sm ";
+        }
+        selectButton.addEventListener("click", function () {
+            if (selectButton.textContent === "Select") {
+                selectedRoomList.appendChild(selectedRoomItem);
+                selectButton.textContent = "Remove";
+                selectButton.className = "btn btn-danger btn-sm ";
+            } else if (selectButton.textContent === "Remove") {
+                selectedRoomList.removeChild(selectedRoomItem);
+                selectButton.textContent = "Select"
+                selectButton.className = "btn btn-primary btn-sm ";
+            }
+            updateHiddenRoomList();
+            updateHiddenSelectedRoomList();
+        })
+        roomItem.appendChild(selectButton);
+        roomList.appendChild(roomItem);
+        updateHiddenRoomList();
+    }
+
+
+    // The following code for getting the list of rooms entered into the form was created with the help of ChatGPT
+    function updateHiddenRoomList() {
+        let listItems = Array.from(document.querySelectorAll("#displayRoomList li"))
+            .map(li => li.textContent.slice(0, li.textContent.length - 6)).join("`");
+
+
+        document.getElementById("hiddenRoomsList").value = JSON.stringify(listItems);
+    }
+
+
+    function updateHiddenSelectedRoomList() {
+        let selectedListItems = Array.from(document.querySelectorAll("#selectedRoomList li"))
+            .map(li => li.textContent.slice(0, li.textContent.length)).join("`");
+
+
+        document.getElementById("hiddenSelectedRoomsList").value = JSON.stringify(selectedListItems);
+    }
+
+
+    document.getElementById("jobDescription").addEventListener("input", function() {
+        const text = document.getElementById("jobDescription").value;
+        const length = [...text].length; // Spread into an array of code points
+        document.getElementById("descriptionHelpBlock").textContent = length + "/512";
+    })
+</script>
+</body>
+</html>

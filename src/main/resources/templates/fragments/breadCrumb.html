@@ -1,0 +1,80 @@
+<div th:fragment="bread-crumb-nav()">
+    <nav id="breadcrumb-nav" class="directory"></nav>
+    <script>
+        const reset_titles = ["My Renovations", "Search", "Available Jobs", "My Quotes"];
+
+        function loadBreadcrumbs() {
+            const data = localStorage.getItem("breadcrumbs");
+            return data ? JSON.parse(data) : [];
+        }
+
+        function saveBreadcrumbs(breadcrumbs) {
+            localStorage.setItem("breadcrumbs", JSON.stringify(breadcrumbs));
+        }
+
+        function addPageToBreadcrumbs(title, url) {
+            let breadcrumbs = loadBreadcrumbs();
+
+            let renovationFromDropdown = url.includes("my-renovations/details") &&
+                !(["My Renovations", "Search"].includes(breadcrumbs[breadcrumbs.length - 1].title));
+
+            let additional_crumb = null;
+            for (let i = 0; i < breadcrumbs.length; i++) {
+                let breadcrumb = breadcrumbs[i];
+                if (["My Renovations", "Search"].includes(breadcrumb.title)) {
+                    additional_crumb = breadcrumb
+                }
+            }
+
+            if (reset_titles.includes(title) || renovationFromDropdown || title.includes("Profile")) {
+                let home_crumb = breadcrumbs[0];
+                if (additional_crumb === null || !renovationFromDropdown) {
+                    breadcrumbs = [home_crumb, { title, url }];
+                } else {
+                    breadcrumbs = [home_crumb, additional_crumb, { title, url }];
+                }
+                saveBreadcrumbs(breadcrumbs);
+                return breadcrumbs;
+            }
+
+            const existingIndex = breadcrumbs.findIndex(b => b.title === title);
+
+            if (existingIndex !== -1) {
+                breadcrumbs = breadcrumbs.slice(0, existingIndex + 1);
+                breadcrumbs[existingIndex].url = url;
+            } else {
+                breadcrumbs.push({ title, url });
+            }
+
+            saveBreadcrumbs(breadcrumbs);
+            return breadcrumbs;
+        }
+
+        function renderBreadcrumbs() {
+            const breadcrumbs = loadBreadcrumbs();
+            const nav = document.getElementById("breadcrumb-nav");
+            if (!nav) return;
+            nav.innerHTML = "";
+
+            breadcrumbs.forEach((b, index) => {
+                if (index > 0) {
+                    nav.appendChild(document.createTextNode(" > "));
+                }
+
+                const link = document.createElement("a");
+                link.href = b.url;
+                link.textContent = b.title;
+                nav.appendChild(link);
+            });
+        }
+
+        window.addEventListener("load", function () {
+            const pageTitle = document.title;
+            const pageUrl = window.location.href;
+            addPageToBreadcrumbs(pageTitle, pageUrl);
+            if (pageTitle !== "Home") {
+                renderBreadcrumbs();
+            }
+        });
+    </script>
+</div>

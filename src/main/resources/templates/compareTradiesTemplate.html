@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link th:href="@{/webjars/bootstrap/css/bootstrap.min.css}" rel="stylesheet">
+    <link th:href="@{/css/styles.css}" rel="stylesheet">
+    <link th:href="@{/css/body.css}" rel="stylesheet">
+    <link th:href="@{/css/button.css}" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" th:href="@{./favicon.ico}">
+    <title>Comparing Tradies</title>
+    <meta name="_csrf" content="${_csrf.token}" />
+    <meta name="_csrf_header" content="${_csrf.headerName}" />
+    <style>
+    </style>
+</head>
+<body style="overflow-x: hidden; overflow-y: hidden;">
+<div th:replace="~{fragments/header :: header}"></div>
+<div id="fetchData" th:attr="data-tradie-ids=${tradieIds}, data-quote-ids=${quoteIds}"></div>
+<div class="flex-wrap rounded container" style="padding: 5px 5px; width: 40vw; margin-bottom: 0; min-width: 350px; margin-top: 1vw">
+    <div class="text-center" th:insert="~{fragments/breadCrumb :: bread-crumb-nav()}"></div>
+    <h4 class="text-center" th:text="${job.getName()}"></h4>
+</div>
+<div th:if="${tradie1.getPortfolioJobs().size() > 0}"
+     th:with="job=${tradie1.getPortfolioJobs().get(0)}"
+     th:insert="~{fragments/imageScrollModal :: jobImageModalFragment(job)}">
+</div>
+<div th:if="${tradie1.getPortfolioJobs().size() > 1}"
+     th:with="job=${tradie1.getPortfolioJobs().get(1)}"
+     th:insert="~{fragments/imageScrollModal :: jobImageModalFragment(job)}">
+</div>
+<div th:if="${tradie2.getPortfolioJobs().size() > 0}"
+     th:with="job=${tradie2.getPortfolioJobs().get(0)}"
+     th:insert="~{fragments/imageScrollModal :: jobImageModalFragment(job)}">
+</div>
+<div th:if="${tradie2.getPortfolioJobs().size() > 1}"
+     th:with="job=${tradie2.getPortfolioJobs().get(1)}"
+     th:insert="~{fragments/imageScrollModal :: jobImageModalFragment(job)}">
+</div>
+<div class="desktop-comparison">
+    <div class="container-fluid text-center">
+        <div class="d-flex justify-content-center gap-lg-5">
+            <div id="leftTradie">
+                <div th:replace="~{fragments/tradieCard :: tradieCard(${tradie1}, ${quote1}, true, ${userService}, ${quote1Stats}, null)}"></div>
+            </div>
+            <div id="rightTradie">
+                <div th:replace="~{fragments/tradieCard :: tradieCard(${tradie2}, ${quote2}, false, ${userService}, ${quote2Stats}, null)}"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="mobile-comparison" style="overflow-x: hidden; overflow-y: hidden;">
+    <div class="text-center">
+        <div class="justify-content-center">
+            <div id="topTradie">
+                <div th:replace="~{fragments/mobileTradieCard :: mobileTradieCard(${tradie1}, ${quote1}, true, ${quote1Stats}, null)}"></div>
+            </div>
+            <div id="bottomTradie">
+                <div th:replace="~{fragments/mobileTradieCard :: mobileTradieCard(${tradie2}, ${quote2}, false, ${quote2Stats}, null)}"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="acceptLastTradie" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Accept Last Tradie</h5>
+            </div>
+            <div class="modal-body">
+                Do you want to accept the last tradie?
+            </div>
+            <div class="modal-footer">
+                <a th:href="@{'/my-renovations/job-details?jobId=' + ${job.id}}" class="btn btn-secondary">Cancel</a>
+                <form th:action="@{/my-renovations/job-details/compare-tradies/accept-last}" method="post">
+                    <input type="hidden" th:name="jobId" th:value="${job.id}">
+                    <button type="submit" class="btn btn-primary" id="acceptLastTradieBtn">Yes, Accept</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="jobModals"></div>
+
+<script>
+    // The majority of the code for swiping away a tradie card and replacing it with a new tradie card was provided with
+    // the help of ChatGPT
+
+    let quote1Id, quote2Id;
+
+    // setup constants for the swiping functionality
+    const csrfToken = `[[${_csrf.token}]]`;
+    const csrfHeader = `[[${_csrf.headerName}]]`;
+    const cardsFlyTo = -1500;
+
+    // setup constants for the desktop swiping functionality
+    const pagePosOffsetRatio = 0.15;
+    const rightCardShift = 0.38;
+    const angleScalar = 1.5;
+    const angleRejectionThreshold = 20; // degrees
+    let leftCard = document.getElementById("leftTradieCard");
+    let rightCard = document.getElementById("rightTradieCard");
+    leftCard.style.transition = "opacity 1.5s ease-in-out";
+    rightCard.style.transition = "opacity 1.5s ease-in-out";
+
+    // setup constants for the mobile swiping functionality
+    let topCard = document.getElementById("topTradieCard");
+    let bottomCard = document.getElementById("bottomTradieCard");
+    topCard.style.transition = "opacity 1.5s ease-in-out";
+    bottomCard.style.transition = "opacity 1.5s ease-in-out";
+
+    // setup variables for the desktop swiping functionality
+    let isDraggingLeft = false;
+    let isDraggingRight = false;
+    let offsetLeftX, offsetRightX;
+    let xMaxRatio = leftCard.getBoundingClientRect().left / window.innerWidth;
+    let xMax = window.innerWidth * xMaxRatio;
+
+    // setup variables for the mobile swiping functionality
+    let isDraggingTop = false;
+    let isDraggingBottom = false;
+    let startX, currentX = false;
+
+    function setUpCards() {
+        leftCard = document.getElementById("leftTradieCard");
+        rightCard = document.getElementById("rightTradieCard");
+        topCard = document.getElementById("topTradieCard");
+        bottomCard = document.getElementById("bottomTradieCard");
+        if (!isMobile()) {
+            quote1Id = leftCard.parentElement.querySelector(".id-data").dataset.quoteId;
+            quote2Id = rightCard.parentElement.querySelector(".id-data").dataset.quoteId;
+        } else {
+            quote1Id = topCard.parentElement.querySelector(".id-data").dataset.quoteId;
+            quote2Id = bottomCard.parentElement.querySelector(".id-data").dataset.quoteId;
+        }
+
+        // !!! Sets the positions of the cards. This will be important if you try to change spacings.
+        leftCard.style.left = `${xMax - pagePosOffsetRatio * window.innerWidth}px`;
+        rightCard.style.right = `${xMax - pagePosOffsetRatio * window.innerWidth}px`;
+        // animations of cards
+        leftCard.style.transition = 'left 0.3s ease, transform 0.3s ease';
+        rightCard.style.transition = 'right 0.3s ease, transform 0.3s ease';
+
+        // !!! Sets the positions of the cards. This will be important if you try to change spacings.
+        window.addEventListener('resize', () => {
+            xMax = window.innerWidth * xMaxRatio;
+            leftCard.style.left = `${xMax - pagePosOffsetRatio * window.innerWidth}px`;
+            rightCard.style.right = `${xMax - pagePosOffsetRatio * window.innerWidth}px`;
+        });
+
+        // LEFT CARD
+        leftCard.addEventListener('mousedown', (e) => {
+            isDraggingLeft = true;
+            offsetLeftX = e.clientX - leftCard.getBoundingClientRect().left;
+            leftCard.style.transition = 'none'; // Disable transition during drag
+            leftCard.style.cursor = 'grabbing';
+        });
+        document.addEventListener('mousemove', (e) => {
+            if (!isDraggingLeft) return;
+            document.body.style.userSelect = 'none';
+            const newX = e.clientX - xMax - offsetLeftX;
+            const maxLeft = xMax - pagePosOffsetRatio * window.innerWidth;
+            const diffRatio = (newX - maxLeft)/ maxLeft;
+            let rotationAngle = -angleScalar * (diffRatio > 0 ? diffRatio : 0);
+            leftCard.style.left = newX < maxLeft ? `${newX}px` : `${maxLeft}px`;
+            leftCard.style.transform = `rotate(${rotationAngle}deg)`;
+        });
+
+        // RIGHT CARD
+        rightCard.addEventListener('mousedown', (e) => {
+            isDraggingRight = true;
+            offsetRightX = e.clientX - rightCard.getBoundingClientRect().left;
+            rightCard.style.transition = 'none'; // Disable transition during drag
+            rightCard.style.cursor = 'grabbing';
+        });
+        document.addEventListener('mousemove', (e) => {
+            if (!isDraggingRight) return;
+            document.body.style.userSelect = 'none';
+            const newRight = e.clientX - offsetRightX - xMax - rightCardShift * window.innerWidth;
+            const maxRight = xMax - pagePosOffsetRatio * window.innerWidth;
+            const diffRatio = (newRight - maxRight)/ maxRight;
+            let rotationAngle = -angleScalar * (diffRatio < 0 ? diffRatio : 0);
+            rightCard.style.right = -newRight < maxRight ? `${-newRight}px` : `${maxRight}px`;
+            rightCard.style.transform = `rotate(${rotationAngle}deg)`;
+        });
+
+        // MOUSE RELEASE RESET CARD POSITIONS
+        document.addEventListener('mouseup', () => {
+            if (isDraggingLeft) {
+                let angle = getRotationAngle(leftCard);
+                if (angle <= 360 - angleRejectionThreshold && angle !== 0) {
+                    rejectQuote("left", quote1Id);
+                    leftCard.style.left = `${cardsFlyTo}px`;
+                } else {
+                    leftCard.style.left = `${xMax - pagePosOffsetRatio * window.innerWidth}px`;
+                    leftCard.style.transform = `rotate(0deg)`;
+                }
+                isDraggingLeft = false;
+                leftCard.style.transition = 'left 0.3s ease, transform 0.3s ease';
+                leftCard.style.cursor = 'grab';
+            }
+            if (isDraggingRight) {
+                if (getRotationAngle(rightCard) > angleRejectionThreshold) {
+                    rejectQuote("right", quote2Id);
+                    rightCard.style.right = `${cardsFlyTo}px`;
+                } else {
+                    rightCard.style.right = `${xMax - pagePosOffsetRatio * window.innerWidth}px`;
+                    rightCard.style.transform = `rotate(0deg)`;
+                }
+                isDraggingRight = false;
+                rightCard.style.transition = 'right 0.3s ease, transform 0.3s ease';
+                rightCard.style.cursor = 'grab';
+            }
+            document.body.style.userSelect = '';
+        });
+
+        // TOP CARD
+        topCard.addEventListener('touchstart', (e) => {
+            isDraggingTop = true;
+            startX = e.touches[0].clientX;
+            topCard.style.transition = "none"; // disable animation during drag
+        });
+        document.addEventListener('touchmove', (e) => {
+            if (!isDraggingTop) return;
+            currentX = e.touches[0].clientX;
+            const deltaX = currentX - startX;
+            topCard.style.transform = `translateX(${deltaX}px) rotate(${deltaX * 0.05}deg)`;
+        });
+
+        // BOTTOM CARD
+        bottomCard.addEventListener('touchstart', (e) => {
+            isDraggingBottom = true;
+            startX = e.touches[0].clientX;
+            bottomCard.style.transition = "none"; // disable animation during drag
+        });
+        document.addEventListener('touchmove', (e) => {
+            if (!isDraggingBottom) return;
+            currentX = e.touches[0].clientX;
+            const deltaX = currentX - startX;
+            bottomCard.style.transform = `translateX(${deltaX}px) rotate(${deltaX * 0.05}deg)`;
+        });
+
+        // TOUCH RELEASE RESET CARD POSITIONS
+        document.addEventListener('touchend', (e) => {
+            const deltaX =  e.changedTouches[0].clientX - startX;
+            const threshold = 200; // how far before "swipe away"
+            if (isDraggingTop) {
+                topCard.style.transition = "transform 0.3s ease";
+                if (Math.abs(deltaX) > threshold) {
+                    rejectQuote("top", quote1Id);
+                    // swipe away
+                    const direction = deltaX > 0 ? 1 : -1;
+                    topCard.style.transform = `translateX(${direction * window.innerWidth}px) rotate(${direction * 30}deg)`;
+                } else {
+                    // snap back
+                    topCard.style.transform = "translateX(0) rotate(0)";
+                }
+                isDraggingTop = false;
+            }
+            if (isDraggingBottom) {
+                bottomCard.style.transition = "transform 0.3s ease";
+                if (Math.abs(deltaX) > threshold) {
+                    rejectQuote("bottom", quote2Id);
+                    // swipe away
+                    const direction = deltaX > 0 ? 1 : -1;
+                    bottomCard.style.transform = `translateX(${direction * window.innerWidth}px) rotate(${direction * 30}deg)`;
+                } else {
+                    // snap back
+                    bottomCard.style.transform = "translateX(0) rotate(0)";
+                }
+                isDraggingBottom = false;
+            }
+            document.body.style.userSelect = '';
+        })
+    }
+
+    // Chatgpt helped write this. A function that gets the rotated angle of a card.
+    // this is important because we will use the angle as a threshold for quote rejection.
+    function getRotationAngle(card) {
+        const style = window.getComputedStyle(card);
+        const transform = style.transform;
+        if (transform === 'none') return 0;
+        const values = transform.match(/matrix\(([^)]+)\)/);
+        if (!values) return 0;
+        const parts = values[1].split(', ');
+        const a = parseFloat(parts[0]);
+        const b = parseFloat(parts[1]);
+        const angle = Math.round(Math.atan2(b, a) * (180 / Math.PI));
+        return angle < 0 ? angle + 360 : angle;
+    }
+
+    // Chatgpt helped me write this. It tells the controller that a quote needs to be rejected.
+    function rejectQuote(side, rejectedQuoteId) {
+        fetch(`./compare-tradies/reject?side=${encodeURIComponent(side)}&rejectedQuoteId=${rejectedQuoteId}`, {
+            method: "PATCH",
+            headers: {
+                'Content-Type': 'application/json'
+                , [csrfHeader]: csrfToken
+            }
+        })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => { throw new Error(text); });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.remainingQuotes === 1) {
+                    const modalEl = document.getElementById("acceptLastTradie");
+                    if (modalEl) {
+                        const modal = new bootstrap.Modal(modalEl);
+                        modal.show();
+                    }
+                } else {
+                    loadNextTradie(side);
+                }
+            })
+            .catch(error => {
+                console.error("Error rejecting quote:", error.message);
+            });
+    }
+
+    function loadNextTradie(side) {
+        let tradieIds = JSON.parse(document.getElementById("fetchData").dataset.tradieIds);
+        let quoteIds = JSON.parse(document.getElementById("fetchData").dataset.quoteIds);
+
+        const oldContainerOptions = {
+            left: document.getElementById("rightTradie"),
+            right: document.getElementById("leftTradie"),
+            top: document.getElementById("bottomTradie"),
+            bottom: document.getElementById("topTradie")
+        };
+``
+        const oldQuoteCard = oldContainerOptions[side];
+        const idOldData = oldQuoteCard.querySelector(".id-data");
+        const oldQuoteId = idOldData.dataset.quoteId;
+
+        if (tradieIds.length > 0 && quoteIds.length > 0) {
+            fetch(`./compare-tradies/get-next-tradie?tradieIds=${tradieIds}&quoteIds=${quoteIds}&side=${side}&oldQuoteId=${oldQuoteId}`)
+                .then(response => response.text())
+                .then(html => {
+                    const containerOptions = {
+                        left: document.getElementById("leftTradie"),
+                        right: document.getElementById("rightTradie"),
+                        top: document.getElementById("topTradie"),
+                        bottom: document.getElementById("bottomTradie")
+                    };
+
+                    const container = containerOptions[side];
+
+                    const temp = document.createElement("div");
+                    temp.innerHTML = html;
+                    const newCard = temp.firstElementChild;
+
+                    newCard.style.opacity = "0";
+                    newCard.style.transition = "opacity 1.5s ease-in-out";
+
+                    container.replaceChild(newCard, container.firstElementChild);
+
+                    requestAnimationFrame(() => {
+                        newCard.style.opacity = "1";
+                    });
+
+                    if (side === "top" || side === "bottom") {
+                        adjustCardHeights();
+                    }
+
+                    const idData = container.querySelector(".id-data");
+                    const tradieId = idData.dataset.tradieId;
+                    const quoteId = idData.dataset.quoteId;
+                    const quoteStats2= JSON.parse(idData.dataset.quoteStats2); //String of true and false
+
+
+
+                    fetch(`./compare-tradies/get-job-modals?tradieId=${tradieId}`)
+                        .then(r => r.json())
+                        .then(jobs => {
+                            jobs.forEach(jobId => {
+                                fetch(`./compare-tradies/get-job-modal-fragment?jobId=${jobId}`)
+                                    .then(r => r.text())
+                                    .then(html => {
+                                        const jobModalsContainer = document.getElementById("jobModals");
+                                        jobModalsContainer.insertAdjacentHTML("beforeend", html);
+
+                                        const modalEl = jobModalsContainer.querySelector(`.job-modal-template:last-child .modal`);
+                                        if (modalEl && !modalEl._bs_modal) {
+                                            modalEl._bs_modal = new bootstrap.Modal(modalEl);
+                                        }
+                                    });
+                            });
+                        });
+
+                    let indexT = tradieIds.indexOf(parseInt(tradieId));
+                    if (indexT > -1) {
+                        tradieIds.splice(indexT, 1);
+                    }
+
+                    let indexQ = quoteIds.indexOf(parseInt(quoteId));
+                    if (indexQ > -1) {
+                        quoteIds.splice(indexQ, 1);
+                    }
+
+                    document.getElementById("fetchData").dataset.tradieIds = JSON.stringify(tradieIds);
+                    document.getElementById("fetchData").dataset.quoteIds = JSON.stringify(quoteIds);
+
+                    resetHigherLowerColour(side, quoteStats2);
+                    setUpCards();
+                    bindButtons();
+                })
+                .catch(err => console.error("Error loading tradie", err));
+        }
+    }
+
+    window.addEventListener("load", function () {
+        setUpCards();
+        bindButtons();
+    });
+
+    function bindButtons() {
+        if (!isMobile()) {
+            document.querySelectorAll("#selectTradie").forEach(button => {
+                button.onclick = () => {
+                    const card = button.closest(".card-container");
+                    const isLeft = card.id.includes("left");
+
+                    const otherCard = document.getElementById(isLeft ? "rightTradieCard" : "leftTradieCard")
+                    const quoteId = otherCard.parentElement.querySelector(".id-data").dataset.quoteId;
+
+                    otherCard.style.transition = "transform 0.6s ease-out, left 0.6s ease-out, right 0.6s ease-out";
+
+                    const side = isLeft ? "right" : "left";
+                    if (side === "left") {
+                        otherCard.style.transform = "rotate(-25deg)";
+                        otherCard.style.left = `${cardsFlyTo}px`;
+                    } else {
+                        otherCard.style.transform = "rotate(25deg)";
+                        otherCard.style.right = `${cardsFlyTo}px`;
+                    }
+
+                    const duration = 600;
+                    setTimeout(() => {
+                        rejectQuote(side, quoteId);
+                        otherCard.style.transform = "";
+                        otherCard.style.transition = "";
+                    }, duration);
+                };
+            });
+        } else {
+            document.querySelectorAll("#selectTradie").forEach(button => {
+                button.onclick = () => {
+                    const card = button.closest(".card-container");
+                    const isTop = card.id.includes("top");
+
+                    const otherCard = document.getElementById(isTop ? "bottomTradieCard" :  "topTradieCard")
+                    const quoteId = otherCard.parentElement.querySelector(".id-data").dataset.quoteId;
+
+                    otherCard.style.transition = "transform 0.6s ease-out";
+
+                    const side = isTop ? "bottom" : "top";
+                    if (side === "top") {
+                        otherCard.style.transform = "translateX(500px) rotate(-25deg)";
+                    } else {
+                        otherCard.style.transform = "translateX(500px) rotate(25deg)";
+                    }
+
+                    const duration = 600;
+                    setTimeout(() => {
+                        rejectQuote(side, quoteId);
+                        otherCard.style.transform = "";
+                        otherCard.style.transition = "";
+                    }, duration);
+                };
+            });
+        }
+    }
+
+    function resetHigherLowerColour(side, quoteStats) {
+        let otherSide = "";
+        if (side === "left") {
+            otherSide = "right";
+        } else if (side === "right") {
+            otherSide = "left";
+        } else if (side === "top") {
+            otherSide = "bottom";
+        } else if (side === "bottom") {
+            otherSide = "top";
+        }
+
+        console.log(otherSide);
+        const changingRating = document.getElementById(`${otherSide}TradieRating`)
+        changingRating.classList.remove('text-success', 'text-danger')
+        if (quoteStats[0] === true) {
+            changingRating.classList.add('text-success');
+        } else {
+            changingRating.classList.add('text-danger');
+        }
+
+        const changingPrice = document.getElementById(`${otherSide}TradiePrice`)
+        changingPrice.classList.remove('text-success', 'text-danger')
+        if (quoteStats[1] === true) {
+            changingPrice.classList.add('text-success');
+        } else {
+            changingPrice.classList.add('text-danger');
+        }
+
+        const changingJobsDone = document.getElementById(`${otherSide}TradieJobsDone`)
+        changingJobsDone.classList.remove('text-success', 'text-danger')
+        if (quoteStats[2] === true) {
+            changingJobsDone.classList.add('text-success');
+        } else {
+            changingJobsDone.classList.add('text-danger');
+        }
+
+        const changingWorkTime = document.getElementById(`${otherSide}TradieWorkTime`)
+        changingWorkTime.classList.remove('text-success', 'text-danger')
+        if (quoteStats[3] === true) {
+            changingWorkTime.classList.add('text-success');
+        } else {
+            changingWorkTime.classList.add('text-danger');
+        }
+
+        const changingTradieEfficiency = document.getElementById(`${otherSide}TradieEfficiency`)
+        changingTradieEfficiency.classList.remove('text-success', 'text-danger')
+        if (quoteStats[4] === true) {
+            changingTradieEfficiency.classList.add('text-success');
+        } else {
+            changingTradieEfficiency.classList.add('text-danger');
+        }
+
+
+    }
+</script>
+</body>
+<script>
+    window.addEventListener("load", function() {
+        toggleMobileView();
+    });
+
+    window.onresize = toggleMobileView;
+
+    function toggleMobileView() {
+        const desktopView = document.querySelector('.desktop-comparison');
+        const mobileView = document.querySelector('.mobile-comparison');
+        const body = document.body;
+        if (isMobile()) {
+            body.style.overflowY = 'auto';
+            mobileView.style.display = "block";
+            desktopView.style.display = "none";
+        } else {
+            body.style.overflowY = 'hidden';
+            desktopView.style.display = "block";
+            mobileView.style.display = "none";
+        }
+    }
+
+    function isTouchDevice() {
+        return (('ontouchstart' in window) ||
+            (navigator.maxTouchPoints > 0) ||
+            (navigator.msMaxTouchPoints > 0));
+    }
+
+    function isMobile() {
+        return !!(window.innerWidth <= 992 || isTouchDevice());
+    }
+</script>
+<script>
+    const carousels = document.querySelectorAll('.carousel');
+    carousels.forEach(carousel => {
+        const prevBtn = carousel.querySelector('.carousel-control-prev');
+        const nextBtn = carousel.querySelector('.carousel-control-next');
+
+        function updateArrows() {
+            const items = carousel.querySelectorAll('.carousel-item');
+            const activeIndex = [...items].findIndex(item => item.classList.contains('active'));
+
+            if (activeIndex === 0) {
+                prevBtn.style.display = 'none';
+            } else {
+                prevBtn.style.display = 'block';
+            }
+
+            if (activeIndex === items.length - 1) {
+                nextBtn.style.display = 'none';
+            } else {
+                nextBtn.style.display = 'block';
+            }
+        }
+
+        updateArrows();
+
+        carousel.addEventListener('slid.bs.carousel', updateArrows);
+    });
+</script>
+</html>

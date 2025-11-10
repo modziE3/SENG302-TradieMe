@@ -1,0 +1,113 @@
+<div th:fragment="tradieCard(tradie, quote, isLeft, userService, quoteStats, quoteStats2)">
+    <style>
+        .star-rating {
+            display: inline-block;
+        }
+
+        .star-rating label {
+            color: #bababa;
+            font-size: 35px;
+            transition: all 0.2s ease;
+        }
+
+        .small-star {
+            font-size: 25px !important;
+        }
+    </style>
+    <div class="card-container id-data"
+         style="max-height: 75vh; width: 100%; max-width: 35vw; min-width: 35vw; position: relative;"
+         th:attr="data-tradie-id=${tradie != null ? tradie.id : ''},
+              data-quote-id=${quote != null ? quote.id : ''},
+              data-quote-stats2=${quoteStats2 != null ? quoteStats2 : ''}"
+         th:id="${isLeft} ? 'leftTradieCard' : 'rightTradieCard'">
+        <div class="container rounded" style="width: 24vw; padding: 25px; height: 70vh">
+            <img th:src="@{${tradie.getProfilePicture() != null ? '/profileImages/' + tradie.getProfilePicture() : '/images/DefaultProfileImage.png'}}"
+                 class="border border-2 avatar-large" alt="" loading="lazy" style="border: 0 solid #c7c7c7;">
+            <div style="flex-grow:1">
+                <h4 class="" style="margin-bottom: -10px" th:text="${tradie != null} ? ${tradie.firstName} + ' ' + ${tradie.lastName}"></h4>
+                <div class="star-rating">
+                    <label class="small-star" th:style="${tradie != null and tradie.averageRating != null and tradie.averageRating >= 1} ? 'color: #ffc107;' : 'color:#bababa;'">★</label>
+                    <label class="small-star" th:style="${tradie != null and tradie.averageRating != null and tradie.averageRating >= 2} ? 'color: #ffc107;' : 'color:#bababa;'">★</label>
+                    <label class="small-star" th:style="${tradie != null and tradie.averageRating != null and tradie.averageRating >= 3} ? 'color: #ffc107;' : 'color:#bababa;'">★</label>
+                    <label class="small-star" th:style="${tradie != null and tradie.averageRating != null and tradie.averageRating >= 4} ? 'color: #ffc107;' : 'color:#bababa;'">★</label>
+                    <label class="small-star" th:style="${tradie != null and tradie.averageRating != null and tradie.averageRating >= 5} ? 'color: #ffc107;' : 'color:#bababa;'">★</label>
+                </div>
+
+                <div class="d-flex justify-content-center">
+                    <p>📧 <span th:text="${quote != null && quote.email != null ? quote.email : 'No email provided'}"></span></p>
+                    <p th:if="${quote != null && quote.phoneNumber != null}">📱 <span th:text="${quote.phoneNumber}"></span></p>
+                </div>
+
+                <h6 style="font-size: 13px" th:text="${quote != null ? quote.description : ''}"></h6>
+
+                <div class="container">
+                    <div class="row row-cols-2 g-1 text-start">
+                        <div th:id="${isLeft} ? 'leftTradieRating' : 'rightTradieRating'" class="col"
+                             th:classappend="${quoteStats.get(0)} ? ' text-success' : ' text-danger'" th:text="${tradie.formatRatings()}"
+                        title="Average Rating"></div>
+                        <div class="col" th:text="'🗓️ ' + ${tradie.formatAccountAge()}" title="Account Age"></div>
+                        <div th:id="${isLeft} ? 'leftTradiePrice' : 'rightTradiePrice'" class="col"
+                             th:classappend="${quoteStats.get(1)} ? ' text-success' : ' text-danger'" th:text="'💵 $' + ${quote.price}"
+                        title="Quote price"></div>
+                        <div th:id="${isLeft} ? 'leftTradieJobsDone' : 'rightTradieJobsDone'" class="col"
+                             th:classappend="${quoteStats.get(2)} ? ' text-success' : ' text-danger'" th:text="'⚖️ '+ ${userService.getCompletedJobsUserHasWorkedOn(tradie.getId()).size()} +' jobs'"
+                        title="Jobs Completed"></div>
+                        <div th:id="${isLeft} ? 'leftTradieWorkTime' : 'rightTradieWorkTime'" class="col"
+                             th:classappend="${quoteStats.get(3)} ? ' text-success' : ' text-danger'" th:text="'⏱️ ' + ${quote.workTime} + 'h'"
+                        title="Quoted Work Time"></div>
+                        <div th:id="${isLeft} ? 'leftTradieEfficiency' : 'rightTradieEfficiency'" class="col"
+                             th:classappend="${quoteStats.get(4)} ? ' text-success' : ' text-danger'" th:text="'➗ '+ ${#numbers.formatDecimal(userService.getUsersWorkEfficiency(tradie.getId()) * 100, 0, 0)}+'% Time Taken'"
+                        title="Average Amount Of Quoted Time Used in Previous Jobs"></div>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center justify-content-center" th:if="${tradie != null and tradie.city != null}" style="padding-top: 5px">
+                    <img th:src="@{'/icons/location-dot-solid-full.svg'}" class="inline-icon" alt="icon" style="padding-right: 10px"/>
+                    <h6 class="mb-0 text-break" th:text="${tradie.city}"></h6>
+                </div>
+
+                <div class="justify-content-center" style="bottom: 0; position: absolute; translate: 3%; width: 57%">
+                    <h4 th:if="${tradie.getPortfolioJobs().size() == 0}" style="margin-bottom: 80px">This user has no jobs shown in their portfolio</h4>
+                    <div class="d-flex justify-content-center" style="gap: 20px">
+                        <div th:if="${tradie.getPortfolioJobs().size() > 0}"
+                             th:with="job=${tradie.getPortfolioJobs().get(0)}"
+                             th:insert="~{fragments/tradieCard :: jobComparePortfolioCard(${job})}">
+                        </div>
+                        <div th:if="${tradie.getPortfolioJobs().size() > 1}"
+                             th:with="job=${tradie.getPortfolioJobs().get(1)}"
+                             th:insert="~{fragments/tradieCard :: jobComparePortfolioCard(${job})}">
+                        </div>
+                    </div>
+                    <button id="selectTradie" class="btn btn-primary btn-lg" style="translate: 0 -10px">This Tradie</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+<div >
+
+</div>
+
+<!--This is the job card show on the compare page for a job.-->
+<div th:fragment="jobComparePortfolioCard(job)">
+    <a class="d-block" data-bs-toggle="modal" style="color: black" th:data-bs-target="'#jobDetailsModal' + ${job!=null ? job.getId() : null}">
+        <div class="rounded container" style="width: 9vw; padding: 0">
+            <div class="container-overlay">
+                <div class="btn icon-picker-btn no-icon job-icon-btn overlay-element disabled" style="opacity: 100%;">
+                    <img class="job-icon"
+                         th:src="@{'/icons/' + ${job != null && job.getIcon() != null ? job.getIcon() : 'plus-solid'} + '.svg'}"
+                         alt="icon"
+                         th:style="${job != null && job.getIcon() != null} ? 'width:40px; height:40px; border:none; outline:none;' : 'width:24px; height:24px; border:none; outline:none;'"/>
+                </div>
+                <img class="border border-2 background-element" style="width: 8.9vw; height: 69%; border-radius: 5px;"
+                     th:src="@{${job != null && job.getImageFilenames().size() > 0 ? '/profileImages/' + job.getImageFilenames().get(0) : '/images/JobDefault.png'}}"
+                     alt="Job Image" height="auto" loading="lazy">
+            </div>
+            <hr style="margin-top: -43px; margin-bottom: 3px">
+            <h6 class="ms-2 mb-2 text-break" style="font-size: 12px" th:text="${job != null ? job.getName() : 'no job set'}"></h6>
+            <hr style="margin: 3px">
+            <h6 class="ms-2 mb-2 text-break" style="font-size: 12px" th:text="'Job Type: ' + ${job != null ? job.getType() : 'no type set'}"></h6>
+        </div>
+    </a>
+</div>

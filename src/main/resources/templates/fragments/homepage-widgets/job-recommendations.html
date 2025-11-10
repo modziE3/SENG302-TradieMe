@@ -1,0 +1,36 @@
+<div th:fragment="jobRecommendations">
+    <div class="rounded flex-grow-1">
+        <div class="d-flex justify-content-between mb-2">
+            <h3>Job Recommendations</h3>
+            <a th:href="@{/job-listings}" class="btn btn-primary ms-2">Go to Available Jobs</a>
+        </div>
+        <ul class="job-listing-list">
+            <li th:each="job : ${recommendedJobs}">
+                <a class="job-listing-card d-block" style="color: black; padding-bottom: 16px; text-decoration: none;" th:href="@{/my-renovations/job-details(jobId=${job.getJobId()},fromSearch=true)}">
+                    <div class="d-flex flex-wrap">
+                        <img th:src="@{${job.getJobImage()}}" loading="lazy" style="height: 90px; max-width: 40%; border: 3px solid #c7c7c7; border-radius: 5px">
+                        <div class="d-block">
+                            <p class="job-title cut-text" th:text="${job.getTitle()}"></p>
+                            <p class="job-small-text cut-text" th:text="'Posted by: ' + ${job.getUserFullName()}"></p>
+                            <p class="job-small-text cut-text" th:text="'Starts: ' + ${job.getStartDate()}"></p>
+                            <p class="job-small-text cut-text" th:text="'Ends: ' + ${job.getEndDate()}"></p>
+                        </div>
+                    </div>
+                    <div class="d-block">
+                        <hr>
+                        <p class="job-med-text cut-text" th:text="'Location: ' + ${job.getLocation()}"></p>
+                        <hr>
+                        <p class="job-med-text cut-text" th:text="'Expertise: ' + ${job.getJobType()}"></p>
+                        <hr>
+                        <p class="job-med-text cut-text" th:text="'Status: ' + ${job.getJobState()}"></p>
+                        <hr>
+                        <p class="job-med-text cut-text" th:text="'Budget/Salary: ' + ${job.getBudget()}"></p>
+                    </div>
+                </a>
+            </li>
+            <div th:if="${recommendedJobs == null || recommendedJobs.isEmpty()}">
+                <h5>No recommended jobs were found</h5>
+            </div>
+        </ul>
+    </div>
+</div>

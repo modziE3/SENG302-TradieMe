@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Available Jobs</title>
+  <link th:href="@{/webjars/bootstrap/css/bootstrap.min.css}" rel="stylesheet"/>
+  <link th:href="@{/css/styles.css}" rel="stylesheet">
+  <link th:href="@{/css/button.css}" rel="stylesheet">
+  <link rel="icon" type="image/x-icon" th:href="@{./favicon.ico}">
+  <style>
+    .sidepanel {
+      margin-top: auto;
+      height: 100%;
+      width: 0;
+      position: fixed;
+      z-index: 4;
+      top: 0;
+      left: 0;
+      background-color: #efefef;
+      overflow-x: hidden;
+      padding-top: 80px;
+      transition: 0.25s;
+    }
+    .sidepanel .closebtn {
+      padding-top: 80px;
+      position: absolute;
+      top: 0;
+      right: 25px;
+      font-size: 36px;
+      margin-left: 50px;
+      text-decoration: none;
+      color: #000000;
+      display: block;
+      transition: 0.15s;
+    }
+    .openbtn {
+      font-size: 17px;
+      cursor: pointer;
+      background-color: #007bff;
+      color: white;
+      padding: 5px 10px;
+      border: none;
+      border-radius: 5px;
+    }
+    .rounded {
+      background-color: #f0f0f0;
+      border-radius: 5px;
+      border: 1px solid #939393;
+      padding: 20px;
+      margin: 20px auto;
+      box-shadow: 6px 6px 6px rgba(0, 0, 0, 0.175)
+    }
+    .search-container {
+      position: relative;
+      margin: 5px;
+    }
+    .search-input {
+      width: 100%;
+      padding: 10px 10px 10px 40px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 25px;
+      box-sizing: border-box;
+    }
+    .search-icon {
+      position: absolute;
+      top: 3%;
+      left: 12px;
+      width: 16px;
+      height: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .search-icon img {
+      width: 24px;
+      height: 24px;
+      border: none 0
+    }
+  </style>
+</head>
+<body>
+<div th:replace="~{fragments/header :: header}"></div>
+
+<div class="container mt-3" style="min-width: 92.5%">
+  <!-- DESKTOP VIEW-->
+  <div class="container-fluid" id="desktop-view">
+    <div class="d-flex gap-3 justify-content-between align-items-start" style="flex-wrap: nowrap">
+
+      <!-- Filter column -->
+      <div class="rounded flex-grow-1" style="flex-basis: 100%; max-width: 400px; max-height: 84vh; min-height: 84vh; position: relative">
+        <div class="d-block">
+          <div class="search-container">
+          <span class="search-icon">
+            <img th:src="@{'/icons/magnifying-glass-solid-full.svg'}" alt="Search icon"/>
+          </span>
+            <form th:action="@{/job-listings(job-page=${jobPage})}" method="get">
+                <input type="text" class="search-input mb-2" id="keywords-filter" th:name="'keywords-filter'" th:value="${keywordsFilter}" placeholder="Keywords...">
+                <label for="type-filter" class="form-label">Job Type</label>
+                <select class="form-select mb-2" id="type-filter" th:name="type-filter">
+                  <option th:value="null" >No Filter</option>
+                  <option th:value="Carpentry" th:selected="(${typeFilter} == 'Carpentry')">Carpentry</option>
+                  <option th:value="Electrical" th:selected="(${typeFilter} == 'Electrical')">Electrical</option>
+                  <option th:value="Plumbing" th:selected="(${typeFilter} == 'Plumbing')">Plumbing</option>
+                  <option th:value="Insulating" th:selected="(${typeFilter} == 'Insulating')">Insulating</option>
+                  <option th:value="Plastering" th:selected="(${typeFilter} == 'Plastering')">Plastering</option>
+                  <option th:value="Painting" th:selected="(${typeFilter} == 'Painting')">Painting</option>
+                </select>
+                <div class="mb-2">
+                  <label for="city-filter" class="form-label">City</label>
+                  <input type="text" class="form-control" id="city-filter" th:name="city-filter" th:value="${cityFilter}"
+                         th:classappend="${cityErrorMessage != null && !cityErrorMessage.isEmpty()} ? ' is-invalid' : ''"
+                         autocomplete="off">
+                  <div id="cityErrorMessage" th:text="${cityErrorMessage}" class="invalid-feedback"></div>
+                  <ul hidden class="suggestions" style="position: absolute" id="citySuggestions"></ul>
+                </div>
+                <div class="mb-2">
+                  <label for="suburb-filter" class="form-label mt-2">Suburb</label>
+                  <input autocomplete="off" th:disabled="${cityFilter} == ''" type="text" class="form-control"
+                         th:classappend="${suburbErrorMessage != null && !suburbErrorMessage.isEmpty()} ? ' is-invalid' : ''"
+                         id="suburb-filter" th:name="suburb-filter" th:value="${suburbFilter}">
+                  <div id="suburbErrorMessage" th:text="${suburbErrorMessage}" class="invalid-feedback"></div>
+                  <ul hidden class="suggestions" style="position: absolute" id="suburbSuggestions"></ul>
+                </div>
+                <div class="mb-2 mt-2">
+                    <label for="jobStartDate" class="form-label">Start Date</label>
+                    <input type="text" class="form-control"
+                           th:classappend="${jobStartDateErrorMessage != null && !jobStartDateErrorMessage.isEmpty()} ? ' is-invalid' : ''"
+                           id="jobStartDate" name="jobStartDate" autocomplete="off"
+                           th:value="${jobStartDate}" placeholder="DD/MM/YYYY">
+                    <div id="jobStartDateErrorMessage" th:text="${jobStartDateErrorMessage}" class="invalid-feedback"></div>
+                </div>
+                <div class="mb-2">
+                    <label for="jobDueDate" class="form-label">Due Date</label>
+                    <input type="text" class="form-control"
+                           th:classappend="${jobDueDateErrorMessage != null && !jobDueDateErrorMessage.isEmpty()} ? ' is-invalid' : ''"
+                           id="jobDueDate" name="jobDueDate" autocomplete="off"
+                           th:value="${jobDueDate}" placeholder="DD/MM/YYYY">
+                    <div id="jobDueDateErrorMessage" th:text="${jobDueDateErrorMessage}" class="invalid-feedback"></div>
+                </div>
+                <button class="btn btn-primary" style="translate: 0 20px" type="submit">Search</button>
+                <a th:href="@{/job-listings}" style="translate: 0 20px" class="btn btn-secondary">Clear filters</a>
+            </form>
+          </div>
+        </div>
+        <!-- Pagination -->
+        <div class="mt-3" style="position: absolute; bottom: 0; left: 50%; transform: translate(-50%, 0%);">
+          <div th:replace="~{fragments/pagination.html :: page-navigation(
+          @{/job-listings(keywords-filter=${keywordsFilter},jobStartDate=${jobStartDate},jobDueDate=${jobDueDate},type-filter=${typeFilter}, city-filter=${cityFilter}, suburb-filter=${suburbFilter})},
+          ${pages},
+          ${jobPage},
+          ${lastPage},
+          'pageNumber',
+          'job-page',
+          'desktopPageField',
+          'desktopGoButton',
+          'desktopPageFieldError')}">
+          </div>
+        </div>
+      </div>
+
+      <!-- Jobs column -->
+      <div class="rounded flex-grow-1" style="flex-basis: 100%; max-width: 77.5%; max-height: 84vh; min-height: 84vh">
+        <div th:insert="~{fragments/breadCrumb :: bread-crumb-nav()}" style="margin-bottom: 10px; font-size: 18px"></div>
+        <ul class="job-listing-list small-scroll-bar-list">
+          <li th:each="job : ${jobs}">
+            <a class="job-listing-card d-block" style="color: black; padding-bottom: 16px; text-decoration: none;" th:href="@{/my-renovations/job-details(jobId=${job.getJobId()},fromSearch=true)}">
+              <div class="d-flex flex-wrap">
+                <img th:src="@{${job.getJobImage()}}" loading="lazy" style="height: 90px; max-width: 40%; border: 3px solid #c7c7c7; border-radius: 5px">
+                <div class="d-block">
+                  <p class="job-title cut-text" th:text="${job.getTitle()}"></p>
+                  <p class="job-small-text cut-text" th:text="'Posted by: ' + ${job.getUserFullName()}"></p>
+                  <p class="job-small-text cut-text" th:text="'Starts: ' + ${job.getStartDate()}"></p>
+                  <p class="job-small-text cut-text" th:text="'Ends: ' + ${job.getEndDate()}"></p>
+                </div>
+              </div>
+              <div class="d-block">
+                <hr>
+                <p class="job-med-text cut-text" th:text="'Location: ' + ${job.getLocation()}"></p>
+                <hr>
+                <p class="job-med-text cut-text" th:text="'Expertise: ' + ${job.getJobType()}"></p>
+                <hr>
+                <p class="job-med-text cut-text" th:text="'Status: ' + ${job.getJobState()}"></p>
+                <hr>
+                <p class="job-med-text cut-text" th:text="'Budget/Salary: ' + ${job.getBudget()}"></p>
+              </div>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <!-- MOBILE VIEW-->
+  <div class="rounded" id="mobile-view" style="display: none;">
+    <div class="d-flex">
+      <div class="directory">
+        <a href="home">Home</a>
+        <span class="separator">&gt;</span>
+        <a href="">Available Jobs</a>
+      </div>
+      <div style="padding-left: 60px" >
+        <button class="openbtn btn btn-primary" onclick="openNav()">&#9776; Filter</button>
+      </div>
+    </div>
+    <div id="mySidepanel" class="sidepanel">
+      <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+      <div class="d-block">
+        <div class="search-container">
+          <form th:action="@{/job-listings(job-page=${jobPage})}" method="get">
+            <span class="search-icon">
+              <img th:src="@{'/icons/magnifying-glass-solid-full.svg'}" alt="Search icon"/>
+            </span>
+            <input type="text" class="search-input mb-2" id="keywords-filter-mobile" th:name="'keywords-filter'" th:value="${keywordsFilter}" placeholder="Keywords...">
+            <label for="type-filter" class="form-label">Job Type</label>
+            <select class="form-select mb-2" id="type-filter-mobile" th:name="type-filter">
+              <option th:value="null" >No Filter</option>
+              <option th:value="Carpentry" th:selected="(${typeFilter} == 'Carpentry')">Carpentry</option>
+              <option th:value="Electrical" th:selected="(${typeFilter} == 'Electrical')">Electrical</option>
+              <option th:value="Plumbing" th:selected="(${typeFilter} == 'Plumbing')">Plumbing</option>
+              <option th:value="Insulating" th:selected="(${typeFilter} == 'Insulating')">Insulating</option>
+              <option th:value="Plastering" th:selected="(${typeFilter} == 'Plastering')">Plastering</option>
+              <option th:value="Painting" th:selected="(${typeFilter} == 'Painting')">Painting</option>
+            </select>
+            <div class="mb-2">
+              <label for="city-filter" class="form-label">City</label>
+              <input type="text" class="form-control" id="city-filter-mobile" th:name="city-filter" th:value="${cityFilter}"
+                     th:classappend="${cityErrorMessage != null && !cityErrorMessage.isEmpty()} ? ' is-invalid' : ''"
+                     autocomplete="off">
+              <div id="cityErrorMessageMobile" th:text="${cityErrorMessage}" class="invalid-feedback"></div>
+              <ul hidden class="suggestions" style="position: absolute" id="citySuggestionsMobile"></ul>
+            </div>
+            <div class="mb-2">
+              <label for="suburb-filter" class="form-label mt-2">Suburb</label>
+              <input autocomplete="off" th:disabled="${cityFilter} == ''" type="text" class="form-control"
+                     th:classappend="${suburbErrorMessage != null && !suburbErrorMessage.isEmpty()} ? ' is-invalid' : ''"
+                     id="suburb-filter-mobile" th:name="suburb-filter" th:value="${suburbFilter}">
+              <div id="suburbErrorMessageMobile" th:text="${suburbErrorMessage}" class="invalid-feedback"></div>
+              <ul hidden class="suggestions" style="position: absolute" id="suburbSuggestionsMobile"></ul>
+            </div>
+            <div class="mb-2 mt-2">
+              <label for="jobStartDate" class="form-label">Start Date</label>
+              <input type="text" class="form-control" autocomplete="off"
+                     th:classappend="${jobStartDateErrorMessage != null && !jobStartDateErrorMessage.isEmpty()} ? ' is-invalid' : ''"
+                     id="jobStartDateMobile" th:name="jobStartDate"
+                     th:value="${jobStartDate}" placeholder="DD/MM/YYYY">
+              <div id="jobStartDateMobileErrorMessage" th:text="${jobStartDateErrorMessage}" class="invalid-feedback"></div>
+            </div>
+            <div class="mb-2">
+              <label for="jobDueDate" class="form-label">Due Date</label>
+              <input type="text" class="form-control" autocomplete="off"
+                     th:classappend="${jobDueDateErrorMessage != null && !jobDueDateErrorMessage.isEmpty()} ? ' is-invalid' : ''"
+                     id="jobDueDateMobile" th:name="jobDueDate"
+                     th:value="${jobDueDate}" placeholder="DD/MM/YYYY">
+              <div id="jobDueDateMobileErrorMessage" th:text="${jobDueDateErrorMessage}" class="invalid-feedback"></div>
+            </div>
+            <button class="btn btn-primary" style="translate: 0 20px" type="submit">Search</button>
+            <a th:href="@{/job-listings}" style="translate: 0 20px" class="btn btn-secondary">Clear filters</a>
+          </form>
+        </div>
+      </div>
+    </div>
+    <h2>Available Jobs</h2>
+    <ul class="job-listing-list small-scroll-bar-list">
+      <li th:each="job : ${jobs}" style="max-width: 85%">
+        <a class="job-listing-card d-block" style="color: black; padding-bottom: 16px; text-decoration: none; max-width:90%;" th:href="@{/my-renovations/job-details(jobId=${job.getJobId()},fromSearch=true)}">
+          <div class="d-flex">
+            <img th:src="@{${job.getJobImage()}}" loading="lazy" style="height: 90px; max-width: 40%; border: 3px solid #c7c7c7; border-radius: 5px">
+            <div class="d-block">
+              <p class="job-title cut-text" th:text="${job.getTitle()}"></p>
+              <p class="job-small-text cut-text" th:text="'Posted by: ' + ${job.getUserFullName()}"></p>
+              <p class="job-small-text cut-text" th:text="'Starts: ' + ${job.getStartDate()}"></p>
+              <p class="job-small-text cut-text" th:text="'Ends: ' + ${job.getEndDate()}"></p>
+            </div>
+          </div>
+          <div class="d-block">
+            <hr>
+            <p class="job-med-text cut-text mw-100 " style="text-wrap: wrap; height: fit-content" th:text="'Location: ' + ${job.getLocation()}"></p>
+            <hr>
+            <p class="job-med-text cut-text" th:text="'Expertise: ' + ${job.getJobType()}"></p>
+            <hr>
+            <p class="job-med-text cut-text" th:text="'Status: ' + ${job.getJobState()}"></p>
+            <hr>
+            <p class="job-med-text cut-text" th:text="'Budget/Salary: ' + ${job.getBudget()}" style="line-height: normal;"></p>
+          </div>
+        </a>
+      </li>
+    </ul>
+    <!-- Pagination-->
+    <div th:replace="~{fragments/pagination.html :: page-navigation(
+  @{/job-listings(keywords-filter=${keywordsFilter},jobStartDate=${jobStartDate},jobDueDate=${jobDueDate},type-filter=${typeFilter})},
+  ${pages},
+  ${jobPage},
+  ${lastPage},
+  'pageNumber',
+  'job-page',
+  'mobilePageField',
+  'mobileGoButton',
+  'mobilePageFieldError')}"></div>
+  </div>
+</div>
+
+<script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:inline="javascript">
+  let citySuburbMap = /*[[${citySuburb}]]*/ {};
+  let cities = Object.keys(citySuburbMap);
+
+  // Auto-Complete for the city input
+  const cityInput = document.getElementById("city-filter")
+  const citySuggestions = document.getElementById("citySuggestions")
+  cityInput.addEventListener("input", () => {
+    citySuggestions.hidden = false;
+    suburbInput.disabled = !cityInput.value.trim();
+    if (suburbInput.disabled) {
+      suburbInput.value = "";
+    }
+    const value = cityInput.value.toLowerCase();
+    citySuggestions.innerText = "";
+    if (value === "") return;
+    const filtered = cities.filter(city => city.toLowerCase().startsWith(value));
+    filtered.forEach(city => {
+      const li = document.createElement("li");
+      li.textContent = city;
+      li.addEventListener("click", () => {
+        cityInput.value = city;
+        citySuggestions.innerText = "";
+        citySuggestions.hidden = true;
+      });
+      citySuggestions.appendChild(li)
+    });
+  })
+
+  // Auto-Complete for the suburb input
+  const suburbInput = document.getElementById("suburb-filter")
+  const suburbSuggestions = document.getElementById("suburbSuggestions")
+  suburbInput.addEventListener("input", () => {
+    suburbSuggestions.hidden = false;
+   const selectedCity = cityInput.value
+   const suburbs = citySuburbMap[selectedCity] //Gets the suburbs associated with the inputted city.
+   const suburbValue = suburbInput.value.toLowerCase();
+   suburbSuggestions.innerText = "";
+   if (suburbValue === "") return;
+   const sFiltered = suburbs.filter(suburb => suburb.toLowerCase().startsWith(suburbValue));
+   sFiltered.forEach(suburb => {
+     const li = document.createElement("li");
+     li.textContent = suburb;
+     li.addEventListener("click", () => {
+       suburbInput.value = suburb;
+       suburbSuggestions.innerText = "";
+       suburbSuggestions.hidden = true;
+     });
+     suburbSuggestions.appendChild(li)
+    });
+  });
+  // Closes the auto-complete sections when the user clicks off of their inputs
+  ['click', 'focusin'].forEach(function(t) {
+    document.addEventListener(t, (e) => {
+      if (!cityInput.contains(e.target) && !citySuggestions.contains(e.target)) {
+        citySuggestions.innerText = "";
+        citySuggestions.hidden = true;
+
+      }
+      if (!suburbInput.contains(e.target) && !suburbSuggestions.contains(e.target)) {
+        suburbSuggestions.innerText = "";
+        suburbSuggestions.hidden = true;
+      }
+    })
+  });
+
+  //Mobile Auto-Complete
+  const cityInputMobile = document.getElementById("city-filter-mobile")
+  const citySuggestionsMobile = document.getElementById("citySuggestionsMobile")
+  cityInputMobile.addEventListener("input", () => {
+    citySuggestionsMobile.hidden = false;
+    suburbInputMobile.disabled = !cityInputMobile.value.trim();
+    if (suburbInputMobile.disabled) {
+      suburbInputMobile.value = ""
+    }
+    const value = cityInputMobile.value.toLowerCase();
+    citySuggestionsMobile.innerText = "";
+    if (value === "") return;
+    const filtered = cities.filter(city => city.toLowerCase().startsWith(value));
+    filtered.forEach(city => {
+      const li = document.createElement("li");
+      li.textContent = city;
+      li.addEventListener("click", () => {
+        cityInputMobile.value = city;
+        citySuggestionsMobile.innerText = "";
+        citySuggestionsMobile.hidden = true;
+      });
+      citySuggestionsMobile.appendChild(li)
+    });
+  })
+
+  // Auto-Complete for the suburb input
+  const suburbInputMobile = document.getElementById("suburb-filter-mobile")
+  const suburbSuggestionsMobile = document.getElementById("suburbSuggestionsMobile")
+  suburbInputMobile.addEventListener("input", () => {
+    suburbSuggestionsMobile.hidden = false;
+    const selectedCity = cityInputMobile.value
+    const suburbs = citySuburbMap[selectedCity] //Gets the suburbs associated with the inputted city.
+    const suburbValue = suburbInputMobile.value.toLowerCase();
+    suburbSuggestionsMobile.innerText = "";
+    if (suburbValue === "") return;
+    const sFiltered = suburbs.filter(suburb => suburb.toLowerCase().startsWith(suburbValue));
+    sFiltered.forEach(suburb => {
+      const li = document.createElement("li");
+      li.textContent = suburb;
+      li.addEventListener("click", () => {
+        suburbInputMobile.value = suburb;
+        suburbSuggestionsMobile.innerText = "";
+        suburbSuggestionsMobile.hidden = true;
+      });
+      suburbSuggestionsMobile.appendChild(li)
+    });
+  });
+  // Closes the auto-complete sections when the user clicks off of their inputs
+  ['click', 'focusin'].forEach(function(t) {
+    document.addEventListener(t, (e) => {
+      if (!cityInputMobile.contains(e.target) && !citySuggestionsMobile.contains(e.target)) {
+        citySuggestionsMobile.innerText = ""
+        citySuggestionsMobile.hidden = true;
+      }
+      if (!suburbInputMobile.contains(e.target) && !suburbSuggestionsMobile.contains(e.target)) {
+        suburbSuggestionsMobile.innerText = ""
+        suburbSuggestionsMobile.hidden = true;
+      }
+    })
+  });
+</script>
+<script>
+  function openNav() {
+    document.getElementById("mySidepanel").style.width = "90%";
+  }
+  function closeNav() {
+    document.getElementById("mySidepanel").style.width = "0";
+  }
+  function isTouchDevice() {
+    return (('ontouchstart' in window) ||
+            (navigator.maxTouchPoints > 0));
+  }
+
+  window.addEventListener('load', function() {
+    toggleView();
+  });
+  window.addEventListener('resize', function() {
+    toggleView();
+  });
+
+  function toggleView() {
+    let desktopView = document.getElementById("desktop-view")
+    let mobileView = document.getElementById("mobile-view")
+    if (window.innerWidth <= 992 || isTouchDevice()) {
+      desktopView.style.display = "none";
+      mobileView.style.display = "block";
+    } else {
+      desktopView.style.display = "block";
+      mobileView.style.display = "none";
+    }
+  }
+</script>
+</body>
+</html>

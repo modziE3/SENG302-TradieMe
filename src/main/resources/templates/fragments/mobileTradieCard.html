@@ -1,0 +1,194 @@
+<div th:fragment="mobileTradieCard(tradie, quote, isTop, quoteStats, quoteStats2)">
+  <style>
+    .star-rating {
+      display: inline-block;
+    }
+
+    .star-rating label {
+      color: #bababa;
+      font-size: 35px;
+      transition: all 0.2s ease;
+    }
+
+    .card-flip {
+      position: relative;
+      width: 100%;
+      min-height: 350px;
+      transition: transform 0.8s;
+      transform-style: preserve-3d;
+    }
+
+    .card-front, .card-back {
+      position: absolute;
+      min-width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      backface-visibility: hidden;
+    }
+
+    .card-back {
+      transform: rotateY(180deg);
+    }
+
+    .card-back > .container,
+    .card-front > .container {
+      height: 100%;
+    }
+
+
+    .card-flip.flipped {
+      transform: rotateY(180deg);
+    }
+
+    .scaling-text {
+      font-size: clamp(0.75rem, 2vw, 1.25rem);
+    }
+
+  </style>
+  <div class="card-container id-data"
+       th:attr="data-tradie-id=${tradie != null ? tradie.getId() : ''},
+              data-quote-id=${quote != null ? quote.getId() : ''},
+              data-quote-stats2=${quoteStats2 != null ? quoteStats2 : ''}"
+       th:id="${isTop} ? 'topTradieCard' : 'bottomTradieCard'">
+    <div class="card-flip" id="flipCard">
+      <!-- Front Card -->
+      <div class="card-front">
+        <div class="card shadow rounded p-2" style="width: 90%; min-width: 35vw; height: 310px">
+
+          <!-- Top-right Portfolio button -->
+          <button type="button" class="btn btn-outline-secondary btn-sm position-absolute m-1"
+                  onclick="flipCard(this)" style="right: 0;">Portfolio</button>
+
+          <!-- Header: image + name + rating -->
+          <div class="d-flex align-items-center mb-2">
+            <img th:src="@{${tradie.getProfilePicture() != null ? '/profileImages/' + tradie.getProfilePicture() : '/images/DefaultProfileImage.png'}}"
+                 class="border border-2 rounded-circle me-2"
+                 alt="Profile" loading="lazy"
+                 style="width: 60px; height: 60px; object-fit: cover;">
+
+            <div>
+              <h4 class="mb-0"
+                  th:text="${tradie != null} ? ${tradie.firstName} + ' ' + ${tradie.lastName}"></h4>
+              <div class="star-rating" style="font-size: 0.9rem;">
+                <label th:style="${tradie.averageRating >= 1} ? 'color: #ffc107;' : 'color:#bababa;'">★</label>
+                <label th:style="${tradie.averageRating >= 2} ? 'color: #ffc107;' : 'color:#bababa;'">★</label>
+                <label th:style="${tradie.averageRating >= 3} ? 'color: #ffc107;' : 'color:#bababa;'">★</label>
+                <label th:style="${tradie.averageRating >= 4} ? 'color: #ffc107;' : 'color:#bababa;'">★</label>
+                <label th:style="${tradie.averageRating >= 5} ? 'color: #ffc107;' : 'color:#bababa;'">★</label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Contact info -->
+          <div class="small text-center mb-1">
+            <span>📧 <span th:text="${quote != null && quote.email != null ? quote.email : 'No email'}"></span></span>
+            <span th:if="${quote != null && quote.phoneNumber != null}"> | 📱 <span th:text="${quote.phoneNumber}"></span></span>
+          </div>
+
+          <!-- Description -->
+          <p class="text-muted small mb-2" style="max-height: 4.5em; overflow: hidden; text-overflow: ellipsis;"
+             th:text="${quote != null ? quote.description : 'No description provided'}"></p>
+
+          <!-- Stats grid -->
+          <div class="row row-cols-2 g-1 mb-2 text-start small">
+            <div th:id="${isTop} ? 'topTradieRating' : 'bottomTradieRating'" class="col"
+                 th:classappend="${quoteStats.get(0)} ? ' text-success' : ' text-danger'" th:text="${tradie.formatRatings()}"></div>
+            <div class="col" th:text="'🗓️ ' + ${tradie.formatAccountAge()}"></div>
+            <div th:id="${isTop} ? 'topTradiePrice' : 'bottomTradiePrice'" class="col"
+                 th:classappend="${quoteStats.get(1)} ? ' text-success' : ' text-danger'" th:text="'💵 $' + ${quote.price}"></div>
+            <div th:id="${isTop} ? 'topTradieJobsDone' : 'bottomTradieJobsDone'" class="col"
+                 th:classappend="${quoteStats.get(2)} ? ' text-success' : ' text-danger'" th:text="'⚖️ ' + ${userService.getCompletedJobsUserHasWorkedOn(tradie.getId()).size()} + ' jobs'"></div>
+            <div th:id="${isTop} ? 'topTradieWorkTime' : 'bottomTradieWorkTime'" class="col"
+                 th:classappend="${quoteStats.get(3)} ? ' text-success' : ' text-danger'" th:text="'⏱️ ' + ${quote.workTime} + 'h'"></div>
+            <div th:id="${isTop} ? 'topTradieEfficiency' : 'bottomTradieEfficiency'" class="col"
+                 th:classappend="${quoteStats.get(4)} ? ' text-success' : ' text-danger'" th:text="'➗ ' + ${userService.getUsersWorkEfficiency(tradie.getId()) * 100} + '%'"></div>
+          </div>
+
+          <!-- Footer action -->
+          <div class="text-center">
+            <button id="selectTradie" class="btn btn-primary btn-sm w-100">This Tradie</button>
+          </div>
+        </div>
+      </div>
+
+
+
+      <!-- Back Card -->
+      <div class="card-back">
+        <div class="container rounded position-relative" style="width: 90%; min-width: 35vw; height: 310px">
+
+          <!-- Top-left button -->
+          <button type="button" class="btn btn-outline-secondary btn-sm top-0 m-2" onclick="flipCard(this)" style="right: 0; position: absolute">Quote</button>
+
+          <div class="mb-5 justify-content-center">
+            <div class="row row-cols-2 g-3 justify-content-center" style="margin-top: 30px">
+              <h4 th:if="${tradie.getPortfolioJobs().size() == 0}" style="margin-bottom: 1px">This user has no jobs shown in their portfolio</h4>
+              <div th:if="${tradie.getPortfolioJobs().size() > 0}"
+                   th:with="job=${tradie.getPortfolioJobs().get(0)}"
+                   th:insert="~{fragments/mobileTradieCard :: jobComparePortfolioCardMobile(${job})}">
+              </div>
+              <div th:if="${tradie.getPortfolioJobs().size() > 1}"
+                   th:with="job=${tradie.getPortfolioJobs().get(1)}"
+                   th:insert="~{fragments/mobileTradieCard :: jobComparePortfolioCardMobile(${job})}">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+
+    function flipCard(button) {
+      const card = button.closest('.card-flip');
+      if (card) {
+        card.classList.toggle('flipped');
+      }
+    }
+
+    // This function sets the height of the cards to be the same so cards don't overlap or show when flipped over
+    function adjustCardHeights() {
+      document.querySelectorAll('.card-flip').forEach(card => {
+        const frontContainer = card.querySelector('.card-front > .container');
+        const backContainer = card.querySelector('.card-back > .container');
+
+        if (!frontContainer || !backContainer) return;
+
+        frontContainer.style.height = '';
+        backContainer.style.height = '';
+
+        const maxHeight = Math.max(frontContainer.scrollHeight, backContainer.scrollHeight);
+
+        card.style.height = maxHeight + 'px';
+        frontContainer.style.height = maxHeight + 'px';
+        backContainer.style.height = maxHeight + 'px';
+      });
+    }
+
+    window.addEventListener('load', adjustCardHeights);
+    window.addEventListener('resize', adjustCardHeights);
+  </script>
+</div>
+
+<div th:fragment="jobComparePortfolioCardMobile(job)">
+  <a class="d-block" data-bs-toggle="modal" style="color: black" th:data-bs-target="'#jobDetailsModal' + ${job!=null ? job.getId() : null}">
+    <div class="rounded container" style="width: 35vw; padding: 0; height: 18vh">
+      <div class="container-overlay">
+        <div class="btn icon-picker-btn no-icon job-icon-btn overlay-element disabled" style="opacity: 100%;">
+          <img class="job-icon"
+               th:src="@{'/icons/' + ${job != null && job.getIcon() != null ? job.getIcon() : 'plus-solid'} + '.svg'}"
+               alt="icon"
+               th:style="${job != null && job.getIcon() != null} ? 'width:40px; height:40px; border:none; outline:none;' : 'width:24px; height:24px; border:none; outline:none;'"/>
+        </div>
+        <img class="border border-2 background-element" style="width: 34.5vw; height: 10vh; border-radius: 5px;"
+             th:src="@{${job != null && job.getImageFilenames().size() > 0 ? '/profileImages/' + job.getImageFilenames().get(0) : '/images/JobDefault.png'}}"
+             alt="Job Image" height="auto" loading="lazy">
+      </div>
+      <hr style="margin-top: 6vh; margin-bottom: 3px">
+      <h6 class="ms-2 mb-2 text-break" style="font-size: 12px" th:text="${job != null ? job.getName() : 'no job set'}"></h6>
+      <hr style="margin: 3px">
+      <h6 class="ms-2 mb-2 text-break" style="font-size: 12px" th:text="'Job Type: ' + ${job != null ? job.getType() : 'no type set'}"></h6>
+    </div>
+  </a>
+</div>

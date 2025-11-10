@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Search</title>
+    <link th:href="@{/webjars/bootstrap/css/bootstrap.min.css}" rel="stylesheet"/>
+    <link th:href="@{/css/styles.css}" rel="stylesheet">
+    <link th:href="@{/css/body.css}" rel="stylesheet">
+    <link th:href="@{/css/button.css}" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" th:href="@{./favicon.ico}">
+    <style>
+        /*
+        CSS for putting tags into the search bar was provided by GeeksForGeeks:
+        https://www.geeksforgeeks.org/how-to-create-tags-input-box-in-html-css-and-javascript/
+        */
+        .tags-input {
+            background-color: white;
+            position: relative;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 3px;
+            width: 60%;
+        }
+
+        .tags-input input[type="text"] {
+            border: none;
+            outline: none;
+            padding: 5px;
+            box-shadow: none;
+        }
+
+        #suggestions {
+            position: absolute;
+            border: 1px solid #ccc;
+            max-width: 250px;
+            background: white;
+        }
+        .suggestion {
+            padding: 5px;
+            cursor: pointer;
+        }
+        .suggestion:hover {
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+<div th:replace="~{fragments/header :: header}"></div>
+
+<div class="container rounded" style="min-height: 75vh">
+    <!-- Page Content -->
+    <div class="d-flex flex-wrap">
+        <div style="margin-bottom: 0px">
+            <div th:replace="~{fragments/breadCrumb :: bread-crumb-nav()}" ></div>
+        </div>
+        <div class="d-block" style="padding-top: 0%; padding-bottom: 2%; margin: auto; text-align: center; width: 60vw; translate: -3vw">
+            <form th:action="@{/search}" method="post">
+                <div class="d-flex justify-content-center align-items-end">
+                    <div id="tagsInput" tabindex="0" class="tags-input">
+                        <div onclick="moveCursorToEnd()" class="d-flex flex-wrap gap-2">
+                            <div th:if="${searchTags != null && !searchTags.isEmpty()}">Tags:</div>
+                            <div th:if="${searchTags != null && !searchTags.isEmpty()}" th:each="tag : ${searchTags.split(';')}"
+                                 class="badge rounded-pill bg-light text-dark fs-6 border-0">
+                                <span th:text="${tag}"></span>
+                                <button type="button" class="bg-light text-dark fs-6 border-0 remove-tag-btn"
+                                        th:data-tag="${tag}"
+                                        style="cursor: pointer;">
+                                    <span>x</span>
+                                </button>
+                            </div>
+                        </div>
+                        <input type="text" class="form-control search-input" id="searchString"
+                               placeholder="Search..." autocomplete="off" th:name="searchString" th:value="${searchString}"
+                               style="border-radius: 4px" onchange="getSearchString()">
+                        <input hidden th:name="searchTags" th:value="${searchTags}">
+                        <div>
+                            <div id="suggestions" class="z-3 text-break"></div>
+                        </div>
+                    </div>
+                    <button id="searchBtn" type="submit" class="btn btn-primary" style="height: 41px;">Search</button>
+                </div>
+                <div id="tagErrorMessage" th:text="${tagErrorMessage}" class="text-danger"></div>
+            </form>
+        </div>
+    </div>
+    <form th:action="@{/search-add-tag(searchString=${searchString},searchTags=${searchTags},results-page=${searchPage})}" method="post" id="addTagForm">
+        <input id="addTagInput" th:name="newTag" hidden>
+    </form>
+    <form th:action="@{/search-remove-tag(searchTags=${searchTags},results-page=${searchPage})}" method="post" id="removeTagForm">
+        <input id="removeTagInput" th:name="tag" hidden>
+        <input id="currentSearchString" th:name="searchString" th:value="${searchString}" hidden>
+    </form>
+    <h3 th:if="${(searchString != null && !searchString.isEmpty()) && results.size() == 0}" class="text-center">
+        No renovations match your search
+    </h3>
+    <h3 th:if="${searchString == null || searchString.isEmpty()}" class="text-center" style="margin-top: -15px">
+        Browse renovations
+    </h3>
+
+    <ul style="overflow-y: auto;display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); list-style-type: none; max-width: 100%;">
+        <div th:each="renovation : ${results}">
+            <li class="renovation-listing-item">
+                <a class="job-listing-card d-block"
+                   style="color: black; padding-bottom: 16px; text-decoration: none; width: 100%; max-width: 410px;"
+                   th:href="@{/my-renovations/details(recordId=${renovation.getRecordId()},search=${'true-'+searchPage+'-'+searchString+'-'+searchTags})}">
+                    <div class="d-flex justify-content-between align-items-start" style="gap: 1rem;">
+                        <div style="flex: 1 1 auto; min-width: 0;">
+                            <p class="job-title cut-text w-100" th:text="${renovation.getName()}"></p>
+                            <p class="job-small-text cut-text w-100" th:text="'Created by: ' + ${renovation.getUserFullName()}"></p>
+                            <p class="job-small-text cut-text w-100" th:text="${renovation.getLocation()} != null ? 'City: ' + ${renovation.getLocation()} : 'City: N/A'"></p>
+                        </div>
+                        <div style="flex: 0 0 auto;">
+                            <img th:src="@{${renovation.getProfilePicture() ?: '/images/DefaultProfileImage.png'}}"
+                                 class="avatar mt-3 ms-auto"
+                                 alt=""
+                                 loading="lazy"
+                                 style="border: 0px solid #c7c7c7; margin-top: 0.5rem; translate: 0 -20px">
+                        </div>
+                    </div>
+                    <div class="d-block">
+                        <hr>
+                        <p class="job-med-text cut-text" th:text="'Description: ' + ${renovation.getDescription()}"></p>
+                    </div>
+                </a>
+            </li>
+        </div>
+    </ul>
+
+    <!-- Pagination -->
+    <div class="d-flex container justify-content-center">
+        <div class="d-block">
+            <div th:if="${pages.size() > 1}">
+                <div class="d-flex flex-column flex-md-row justify-content-center">
+                    <ul class="pagination mb-1 d-flex justify-content-center">
+                        <!-- First -->
+                        <li class="page-item" th:classappend="${searchPage == 1} ? 'disabled'">
+                            <a class="page-link" th:href="@{'/search?searchString=' + ${searchString} + '&searchTags=' + ${searchTags} + '&results-page=1'}">First</a>
+                        </li>
+                        <!-- Prev -->
+                        <li class="page-item" th:classappend="${searchPage == 1} ? 'disabled'">
+                            <a class="page-link" th:href="@{'/search?searchString=' + ${searchString} + '&searchTags=' + ${searchTags} + '&results-page=' + ${searchPage -1}}">Prev</a>
+                        </li>
+                    </ul>
+                    <ul class="pagination mb-1 d-flex justify-content-center">
+                        <!-- pages: -2,-1,+0,+1,+2 -->
+                        <li class="page-item" th:each="page : ${pages}" th:if="${searchPage -2 == page ||searchPage -1 == page || searchPage == page || searchPage +1 == page || searchPage +2 == page}" th:classappend="${page == searchPage} ? ' active'">
+                            <a class="page-link" th:text="${page}" th:href="@{'/search?searchString=' + ${searchString} + '&searchTags=' + ${searchTags} + '&results-page=' + ${page}}"></a>
+                        </li>
+                    </ul>
+                    <ul class="pagination d-flex justify-content-center">
+                        <!-- Next -->
+                        <li class="page-item" th:classappend="${searchPage == lastPage} ? 'disabled'">
+                            <a class="page-link" th:href="@{'/search?searchString=' + ${searchString} + '&searchTags=' + ${searchTags} + '&results-page=' + ${searchPage +1}}">Next</a>
+                        </li>
+                        <!-- Last -->
+                        <li class="page-item" th:classappend="${searchPage == lastPage} ? 'disabled'">
+                            <a class="page-link" th:href="@{'/search?searchString=' + ${searchString} + '&searchTags=' + ${searchTags} + '&results-page=' + ${lastPage}}">Last</a>
+                        </li>
+                    </ul>
+                </div>
+                <!-- Enter page field and go button -->
+                <div th:if="${pages.size() > 1 && pages.get(pages.size() - 1) > 10}" class="ms-2 mb-3 d-flex justify-content-center">
+                    <form th:action="@{'/search-page-number?searchString=' + ${searchString} + '&searchTags=' + ${searchTags} + '&results-page=' + ${searchPage}}" method="post">
+                        <div class="input-group">
+                            <input type="text" class="form-control w-25" placeholder="Enter page number" id="pageNumber"
+                                   th:name="pageNumber" th:value="${pageNumber}">
+                            <button id="pageNumberBtn" class="btn btn-primary" type="submit">Go</button>
+                        </div>
+                        <div id="pageNumberErrorMessage" th:text="${pageNumberErrorMessage}" class="invalid-feedback d-block"></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!--Script tag provided by ChatGPT-->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script>
+    // Error message styling for search bar
+    if (document.getElementById("tagErrorMessage").textContent !== "") {
+        document.getElementById("tagsInput").style.border = "1px solid red"
+    } else {
+        document.getElementById("tagsInput").style.border = "1px solid #ccc";
+    }
+
+    // JavaScript code for getting the tag whose delete button has been clicked was provided by ChatGPT
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.remove-tag-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const tagToRemove = this.getAttribute('data-tag');
+                document.getElementById("removeTagInput").value = tagToRemove
+                document.getElementById("removeTagForm").submit();
+            });
+        });
+    });
+
+    // Page number input bar
+    if (document.getElementById("pageNumberBtn") !== null) {
+        document.getElementById("pageNumberBtn").addEventListener("click", function(event) {
+            const pageNumber = document.getElementById("pageNumber").value.trim();
+            let pages = "[[${pages}]]";
+            pages = pages.slice(1, -1).split(", ").map(Number);
+            if (pageNumber.length === 0 || isNaN(Number(pageNumber)) || pageNumber.includes(".")) {
+                event.preventDefault();
+                document.getElementById("pageNumberErrorMessage").textContent = "Please enter a whole number";
+                document.getElementById("pageNumber").classList.add("is-invalid");
+            } else if (!(pages[0] <= pageNumber) || !(pageNumber <= pages[pages.length - 1])) {
+                event.preventDefault();
+                document.getElementById("pageNumberErrorMessage").textContent =
+                    "The page number is outside the range of available pages";
+                document.getElementById("pageNumber").classList.add("is-invalid");
+            }
+        })
+    }
+
+    // JavaScript code for putting cursor at the end of search bar was provided by GeeksForGeeks
+    // https://www.geeksforgeeks.org/how-to-place-cursor-position-at-end-of-text-in-text-input-field-using-javascript/
+    function moveCursorToEnd() {
+        const input = document.getElementById('searchString');
+        const length = input.value.length;
+        input.focus();
+        input.setSelectionRange(length, length);
+    }
+
+
+    // Gets the search string currently entered
+    function getSearchString() {
+        document.getElementById("currentSearchString").value = document.getElementById("searchString").value;
+    }
+
+    // Tag name autocomplete suggestions
+    const input = document.getElementById('searchString');
+    const suggestionsBox = document.getElementById('suggestions');
+    input.addEventListener('input', () => {
+        const inputValue = input.value.toLowerCase().trim();
+        suggestionsBox.innerHTML = '';
+
+        if (inputValue.length > 0) {
+            let suggestions = "[[${tagNames}]]";
+            suggestions = suggestions.slice(1, -1)
+            let suggestionList = [];
+            if (suggestions !== "") {
+                suggestionList = suggestions.split('`').map(suggestion => suggestion.trim());
+            }
+            let suggestionMatch = false;
+            suggestionList.forEach(suggestion => {
+                if (suggestion.startsWith(inputValue)) {
+                    suggestionMatch = true;
+                    const div = document.createElement('div');
+                    div.className = 'suggestion';
+                    div.textContent = suggestion;
+
+                    div.addEventListener('click', () => {
+                        let searchTags = "[[${searchTags}]]";
+                        searchTags = searchTags.split(";");
+                        if (searchTags.length === 5) {
+                            document.getElementById("tagErrorMessage").textContent = "You cannot add more than 5 tags";
+                            document.getElementById("tagsInput").style.border = "1px solid red";
+                        } else if (searchTags.includes(suggestion)) {
+                            document.getElementById("tagErrorMessage").textContent = "There is already a search tag with that name";
+                            document.getElementById("tagsInput").style.border = "1px solid red";
+                        } else {
+                            document.getElementById("addTagInput").value = suggestion;
+                            document.getElementById("addTagForm").submit();
+                        }
+                        suggestionsBox.innerHTML = '';
+                    });
+                    suggestionsBox.appendChild(div);
+                }
+            });
+
+            if (!suggestionMatch) {
+                const div = document.createElement('div');
+                div.className = 'suggestion text-muted';
+                div.textContent = 'No matching tags';
+                suggestionsBox.appendChild(div);
+            }
+        }
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link th:href="@{/webjars/bootstrap/css/bootstrap.min.css}" rel="stylesheet"/>
+    <link th:href="@{/css/styles.css}" rel="stylesheet">
+    <link th:href="@{/css/body.css}" rel="stylesheet">
+    <link th:href="@{/css/button.css}" rel="stylesheet">
+    <title th:text="${profileUser.getFirstName()} + '\'s Profile'"></title>
+    <link rel="icon" type="image/x-icon" th:href="@{./favicon.ico}">
+    <style>
+        .star-rating {
+            display: flex;
+            align-items: flex-end;
+        }
+
+        .star-rating label {
+            color: #bababa;
+            font-size: 35px;
+            transition: all 0.2s ease;
+        }
+        .carousel-control-prev-icon,
+        .carousel-control-next-icon {
+            background-color: orange;
+            border-radius: 50%;
+        }
+
+        .carousel-control-prev-icon::after,
+        .carousel-control-next-icon::after {
+            background-color: orange;
+        }
+
+        .carousel.slide:has(.carousel-inner .carousel-item:nth-child(2)) .carousel-control-prev,
+        .carousel.slide:has(.carousel-inner .carousel-item:nth-child(2)) .carousel-control-next {
+            display: block;
+        }
+
+        .carousel.slide:not(:has(.carousel-inner .carousel-item:nth-child(2))) .carousel-control-prev,
+        .carousel.slide:not(:has(.carousel-inner .carousel-item:nth-child(2))) .carousel-control-next {
+            display: none;
+        }
+
+        .carousel-item img{
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+        }
+        .modal-content {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-body {
+            overflow-y: auto;
+        }
+
+    </style>
+</head>
+<body>
+    <div th:replace="~{fragments/header :: header}"></div>
+
+    <div class="container rounded" style="min-height: 75vh; max-width: 850px">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="d-block">
+                <div th:insert="~{fragments/breadCrumb :: bread-crumb-nav()}"></div>
+                <h1 class="display-3" th:text="${profileUser.getFirstName()} + '\'s Profile'"></h1>
+            </div>
+            <div class="d-flex flex-column">
+                <a th:if="${ownProfile}" th:href="@{edit-profile}" class="btn btn-secondary mb-2">Edit &#10000</a>
+                <a th:href="@{home}" class="btn btn-primary mb-2 ">Return home</a>
+                <a th:href="@{map(userId=${profileUser.id})}" class="btn btn-primary mb-2">Map</a>
+
+            </div>
+        </div>
+
+        <nav class="mt-3">
+            <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                <a class="nav-link active" id="nav-details-tab" data-bs-toggle="tab" href="#nav-details" type="button" role="tab" aria-controls="nav-details" aria-selected="true">Details</a>
+                <a th:if="${ownProfile}" class="nav-link" id="nav-completed-jobs-tab" data-bs-toggle="tab" href="#nav-completed-jobs" type="button" role="tab" aria-controls="nav-completed-jobs" aria-selected="false">Completed Jobs</a>
+            </div>
+        </nav>
+
+        <div class="tab-content" id="nav-tabContent">
+            <div class="tab-pane fade show active" id="nav-details" role="tabpanel" aria-labelledby="nav-details-tab">
+                <div class="d-flex justify-content-between align-items-center mt-xxl-3">
+                    <img class="border border-2 avatar-large" style="width: 200px; height: 200px;"
+                         th:src="@{${profileUserImage ?: 'images/DefaultProfileImage.png'}}"
+                         alt="Profile Image" height="auto">
+                    <div class="d-flex flex-column" style="flex-grow:1">
+                        <div class="ms-2 mb-2 text-break fw-bold fs-4" id="nameId"
+                             th:text="'Name: ' + ${profileUser.getFirstName()} + ' ' + ${profileUser.getLastName()}"></div>
+                        <div class="ms-2 mb-2 text-break" id="emailId" th:text="'Email: '+${profileUser.getEmail()} "></div>
+                        <div th:if="${profileUser.getStreetAddress() != null}" class="ms-2 mb-2 text-break"
+                            th:text="'Address: ' + ${profileUser.getStreetAddress()} +
+                                ${profileUser.getSuburb() != null ? ', ' + profileUser.getSuburb() : ''} +
+                                ${profileUser.getCity() != null ? ', ' + profileUser.getCity() : ''} +
+                                ${profileUser.getPostcode() != null ? ', '+ profileUser.getPostcode() : ''} +
+                                ${profileUser.getCountry() != null ? ', ' + profileUser.getCountry() : ''}"></div>
+                        <div th:if="${profileUser.getReceivedRatings().size() > 0}" class="star-rating d-flex align-items-center">
+                            <label th:style="${profileUser.getAverageRating() >= 1} ? 'color: #ffc107;'">★</label>
+                            <label th:style="${profileUser.getAverageRating() >= 2} ? 'color: #ffc107;'">★</label>
+                            <label th:style="${profileUser.getAverageRating() >= 3} ? 'color: #ffc107;'">★</label>
+                            <label th:style="${profileUser.getAverageRating() >= 4} ? 'color: #ffc107;'">★</label>
+                            <label th:style="${profileUser.getAverageRating() >= 5} ? 'color: #ffc107;'">★</label>
+                            <span class="fs-4" th:text="${#numbers.formatDecimal(profileUser.getAverageRating(), 1, 1)} + ''"></span>
+                            <span class="fs-5 ms-1"
+                                  th:text="'(' + ${profileUser.getReceivedRatings().size()} + ')'"></span>
+                        </div>
+                        <div th:if="${profileUser.getReceivedRatings().size() == 0}" class="star-rating d-flex align-items-center">
+                            <span class="fs-5 ms-1"
+                            th:text="'No Ratings'"></span>
+                        </div>
+
+                    </div>
+                </div>
+                <div th:if="${!portfolioJobs.isEmpty()}" class="mt-4 text-break fw-bold fs-4">Job Portfolio</div>
+                <div class="row mt-xxl-3">
+                    <div class="col-md-4 mb-3" th:each="job : ${portfolioJobsPage}">
+                        <a class="completed-job-card d-block p-3 text-dark text-decoration-none"
+                           data-bs-toggle="modal" th:data-bs-target="'#jobDetailsModal' + ${job.getId()}">
+                            <p th:text="${job.getName()}"></p>
+                            <p class="text-break mb-2 small text-muted" th:text="${job.getDescription()}"
+                               style="width: 210px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></p>
+                            <hr>
+                            <img th:src="@{${job.getImageFilenames().isEmpty() ? (job.getRooms().isEmpty() ? '/images/JobDefault.png' : '/profileImages/' + job.getRooms().getFirst().getImageFilename()) : '/profileImages/' + job.getImageFilenames().getFirst()}}"
+                                 style="height: 125px; max-width: 100%;" class="img-fluid" loading="lazy" alt="">
+                            <hr>
+                            <div class="d-flex flex-column">
+                                <button th:if="${ownProfile}" class="btn btn-secondary mb-2" data-bs-toggle="modal" th:data-bs-target="'#uploadImageModal'+${job.getId()}">Add Image</button>
+                            </div>
+                        </a>
+                        <div class="modal fade" th:id="'uploadImageModal'+${job.getId()}" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="uploadImageLabel" th:text="${job.getName()}"></h5>
+                                        <button th:id="'uploadModalClose'+${job.getId()}" th:jobId="${job.getId()}" type="button" onclick="resetErrorMessage(this)" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body row mt-xxl-3" style="width: fit-content" >
+                                        <div class="col-md-4 mb-3" th:each="imageFilename : ${job.getImageFilenames()}">
+                                            <form th:action="@{remove-job-image}" method="post">
+                                                <input type="hidden" th:name="jobId" th:value="*{job.getId()}">
+                                                <input type="hidden" th:name="filename" th:value="${imageFilename}">
+                                                <div style="position:relative">
+                                                    <img th:src="@{${imageFilename != null ? '/profileImages/' + imageFilename : '/images/RenovationRoomDefault.png'}}"
+                                                         class="img-fluid" loading="lazy" alt="Job Image" style="width: 200px; height: auto">
+                                                    <button style="position: absolute; top:1%; left:1%; opacity: 95%" type="submit" class="btn btn-danger">&#128939</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                        <form th:if="${job.getImageFilenames().size() < 5}" th:id="'imageForm'+${job.getId()}" th:action="@{/add-job-image}"
+                                              method="post" enctype="multipart/form-data">
+                                            <input type="hidden" th:name="jobId" th:value="*{job.getId()}">
+                                            <input type="file" name="file" th:jobId="${job.getId()}" onchange="submitImageForm(this)" class="form-control"
+                                                   th:name="submittedFile" aria-label="file example" th:id="'profileImage' + ${job.getId()}" required>
+                                            <div th:id="'fileErrorMessage' + ${job.getId()}" th:text="${fileErrorMessage}" class="invalid-feedback"></div>
+                                        </form>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" th:jobId="${job.getId()}" data-bs-dismiss="modal" onclick="resetErrorMessage(this)">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div th:insert="~{fragments/imageScrollModal :: jobImageModalFragment(${job})}"></div>
+                    </div>
+                </div>
+
+
+
+
+
+                                <div class="mt-3" style="position: relative; bottom: 0; left: 50%; transform: translate(-50%, 0%);">
+                    <div th:replace="~{fragments/pagination.html :: page-navigation(
+                    @{/profile(userId=${userId}, completedPage=${currentCompletedJobPage})},
+                    ${portfolioJobsPageNums},
+                    ${currentPortfolioJobPage},
+                    ${lastPortfolioJobsPage},
+                    'newPortfolioPage',
+                    'portfolioPage',
+                    'desktopPageField',
+                    'desktopGoButton',
+                    'desktopPageFieldError')}">
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="tab-pane fade" id="nav-completed-jobs" role="tabpanel" aria-labelledby="nav-completed-jobs">
+                <div class="row mt-xxl-3">
+                    <div class="col-md-4 mt-2 mb-3" th:each="job : ${completedJobs}">
+                        <a class="completed-job-card d-block p-3 text-dark text-decoration-none">
+                            <form th:action="@{/add-to-profile(userId=${profileUser.getId()},jobId=${job.getId()})}"
+                                  method="post">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="addToProfile"
+                                           th:checked="${portfolioJobs.contains(job)}" onchange="submit()">
+                                    <label class="form-check-label" for="addToProfile">
+                                        Add to Profile
+                                    </label>
+                                </div>
+                            </form>
+                            <hr>
+                            <p th:text="${job.getName()}"></p>
+                            <p class="text-break mb-2 small text-muted" th:text="${job.getDescription()}"
+                               style="width: 210px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></p>
+                            <hr>
+                            <img th:src="@{${job.getImageFilenames().isEmpty() ? (job.getRooms().isEmpty() ? '/images/JobDefault.png' : '/profileImages/' + job.getRooms().getFirst().getImageFilename()) : '/profileImages/' + job.getImageFilenames().getFirst()}}"
+                                 style="height: 125px; max-width: 100%;" class="img-fluid" loading="lazy" alt="">
+                        </a>
+                    </div>
+                </div>
+                <div class="mt-3" style="position: relative; bottom: 0; left: 50%; transform: translate(-50%, 0%);">
+                    <div th:replace="~{fragments/pagination.html :: page-navigation(
+                    @{/profile(userId=${userId}, portfolioPage=${currentPortfolioJobPage})},
+                    ${completedJobsPageNums},
+                    ${currentCompletedJobPage},
+                    ${lastPage},
+                    'newCompletedPage',
+                    'completedPage',
+                    'desktopPageField',
+                    'desktopGoButton',
+                    'desktopPageFieldError')}">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const tabLinks = document.querySelectorAll('a[data-bs-toggle="tab"]');
+            tabLinks.forEach(tab => {
+                tab.addEventListener('shown.bs.tab', function (e) {
+                    localStorage.setItem('activeTab', e.target.getAttribute('href'));
+                });
+            });
+
+            const activeTab = localStorage.getItem('activeTab');
+            if (activeTab) {
+                const tabTrigger = document.querySelector(`a[href="${activeTab}"]`);
+                if (tabTrigger) {
+                    new bootstrap.Tab(tabTrigger).show();
+                }
+            }
+        });
+    </script>
+</body>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const tabLinks = document.querySelectorAll('a[data-bs-toggle="tab"]');
+        tabLinks.forEach(tab => {
+            tab.addEventListener('shown.bs.tab', function (e) {
+                localStorage.setItem('activeTab', e.target.getAttribute('href'));
+            });
+        });
+
+        const activeTab = localStorage.getItem('activeTab');
+        if (activeTab) {
+            const tabTrigger = document.querySelector(`a[href="${activeTab}"]`);
+            if (tabTrigger) {
+                new bootstrap.Tab(tabTrigger).show();
+            }
+        }
+
+        const carousels = document.querySelectorAll('.carousel');
+        carousels.forEach(carousel => {
+            const prevBtn = carousel.querySelector('.carousel-control-prev');
+            const nextBtn = carousel.querySelector('.carousel-control-next');
+
+            function updateArrows() {
+                const items = carousel.querySelectorAll('.carousel-item');
+                const activeIndex = [...items].findIndex(item => item.classList.contains('active'));
+
+                if (activeIndex === 0) {
+                    prevBtn.style.display = 'none';
+                } else {
+                    prevBtn.style.display = 'block';
+                }
+
+                if (activeIndex === items.length - 1) {
+                    nextBtn.style.display = 'none';
+                } else {
+                    nextBtn.style.display = 'block';
+                }
+            }
+
+            updateArrows();
+
+            carousel.addEventListener('slid.bs.carousel', updateArrows);
+        });
+    });
+
+    function submitImageForm(item) {
+        var jobId = item.getAttribute("jobId")
+
+        document.getElementById('imageForm'+jobId).classList.remove("was-validated");
+        const fi = document.getElementById('profileImage'+jobId);
+
+        if (fi.files.length > 0) {
+            for (let i = 0; i <= fi.files.length - 1; i++) {
+                fsize = fi.files.item(i).size;
+                const file = Math.round((fsize / 1024));
+                if (file >= 10240) {
+                    const errorDiv = document.getElementById('fileErrorMessage'+jobId);
+                    errorDiv.textContent = "Image must be less than 10MB";
+                    errorDiv.classList.remove("d-none");
+                    errorDiv.classList.add("d-block");
+                } else {
+                    document.getElementById('imageForm'+jobId).submit();
+                }
+            }
+        }
+    }
+
+    function resetErrorMessage(item) {
+        const jobId = item.getAttribute("jobId");
+        document.getElementById('imageForm'+jobId).classList.remove("was-validated");
+        const errorDiv = document.getElementById('fileErrorMessage'+jobId);
+        errorDiv.textContent = "";
+        errorDiv.classList.remove("d-block");
+        errorDiv.classList.add("d-none");
+        const fi = document.getElementById('profileImage'+jobId);
+        fi.value = '';
+
+    }
+
+    // Reopen the modal when loading the page from adding image
+    window.addEventListener("load", function () {
+        const jobId = `[[${jobId}]]`;
+        if (jobId) {
+            if (document.getElementById("fileErrorMessage"+jobId).textContent !== "") {
+                document.getElementById('imageForm'+jobId).classList.add("was-validated");
+            }
+            const myModal = new bootstrap.Modal(document.getElementById('uploadImageModal'+jobId));
+            myModal.show();
+        }
+    });
+</script>
+</html>
